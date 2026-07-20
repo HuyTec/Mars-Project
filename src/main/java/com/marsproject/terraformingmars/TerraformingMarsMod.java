@@ -64,12 +64,7 @@ public class TerraformingMarsMod {
             .icon(() -> ModItems.IRONSTONE_ITEM.get().getDefaultInstance())
             .displayItems((parameters, output) -> {
 
-//khai báo accept cho các
-                output.accept(ModItems.DUST_DEPOSIT_ITEM.get());
-                output.accept(ModItems.HEMATITE_LAYER_ITEM.get());
-                output.accept(ModItems.SULFATE_ROCK_ITEM.get());
-                output.accept(ModItems.CRYOTIC_ROCK_ITEM.get());
-                output.accept(ModItems.IRONSTONE_ITEM.get());
+                ModItems.GEOLOGY_ITEMS.forEach(item -> output.accept(item.get()));
 
             }).build());
 

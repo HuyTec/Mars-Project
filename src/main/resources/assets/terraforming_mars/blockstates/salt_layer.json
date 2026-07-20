@@ -1,0 +1,28 @@
+{
+    "variants":  {
+                     "layers=6":  {
+                                      "model":  "terraforming_mars:block/salt_layer_6"
+                                  },
+                     "layers=4":  {
+                                      "model":  "terraforming_mars:block/salt_layer_4"
+                                  },
+                     "layers=7":  {
+                                      "model":  "terraforming_mars:block/salt_layer_7"
+                                  },
+                     "layers=5":  {
+                                      "model":  "terraforming_mars:block/salt_layer_5"
+                                  },
+                     "layers=8":  {
+                                      "model":  "terraforming_mars:block/salt_layer_8"
+                                  },
+                     "layers=3":  {
+                                      "model":  "terraforming_mars:block/salt_layer_3"
+                                  },
+                     "layers=1":  {
+                                      "model":  "terraforming_mars:block/salt_layer_1"
+                                  },
+                     "layers=2":  {
+                                      "model":  "terraforming_mars:block/salt_layer_2"
+                                  }
+                 }
+}

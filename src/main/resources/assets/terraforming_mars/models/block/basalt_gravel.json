@@ -1,0 +1,6 @@
+{
+    "textures":  {
+                     "all":  "terraforming_mars:block/basalt_gravel"
+                 },
+    "parent":  "minecraft:block/cube_all"
+}

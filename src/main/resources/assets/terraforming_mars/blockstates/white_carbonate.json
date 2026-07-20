@@ -1,0 +1,7 @@
+{
+    "variants":  {
+                     "":  {
+                              "model":  "terraforming_mars:block/white_carbonate"
+                          }
+                 }
+}

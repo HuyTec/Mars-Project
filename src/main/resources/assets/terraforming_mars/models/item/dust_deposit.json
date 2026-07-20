@@ -1,1 +1,3 @@
-{"parent": "terraforming_mars:block/dust_deposit"}
+{
+    "parent":  "terraforming_mars:block/dust_deposit"
+}

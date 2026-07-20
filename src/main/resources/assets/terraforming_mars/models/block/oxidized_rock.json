@@ -1,0 +1,6 @@
+{
+    "textures":  {
+                     "all":  "terraforming_mars:block/oxidized_rock"
+                 },
+    "parent":  "minecraft:block/cube_all"
+}

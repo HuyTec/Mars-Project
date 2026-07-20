@@ -1,1 +1,6 @@
-{"parent": "minecraft:block/cube_all", "textures": {"all": "terraforming_mars:block/dust_deposit"}}
+{
+    "textures":  {
+                     "all":  "terraforming_mars:block/dust_deposit"
+                 },
+    "parent":  "minecraft:block/cube_all"
+}

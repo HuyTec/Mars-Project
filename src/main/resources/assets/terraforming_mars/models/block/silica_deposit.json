@@ -1,0 +1,6 @@
+{
+    "textures":  {
+                     "all":  "terraforming_mars:block/silica_deposit"
+                 },
+    "parent":  "minecraft:block/cube_all"
+}

@@ -1,0 +1,6 @@
+{
+    "textures":  {
+                     "all":  "terraforming_mars:block/sulfate_cobble"
+                 },
+    "parent":  "minecraft:block/cube_all"
+}

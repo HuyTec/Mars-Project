@@ -1,1 +1,7 @@
-{"variants": {"": {"model": "terraforming_mars:block/ironstone"}}}
+{
+    "variants":  {
+                     "":  {
+                              "model":  "terraforming_mars:block/ironstone"
+                          }
+                 }
+}

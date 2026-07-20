@@ -1,0 +1,6 @@
+{
+    "textures":  {
+                     "all":  "terraforming_mars:block/mars_iron_vein"
+                 },
+    "parent":  "minecraft:block/cube_all"
+}

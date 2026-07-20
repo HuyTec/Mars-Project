@@ -1,0 +1,6 @@
+{
+    "textures":  {
+                     "all":  "terraforming_mars:block/iron_rich_regolith"
+                 },
+    "parent":  "minecraft:block/cube_all"
+}

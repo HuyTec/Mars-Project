@@ -1,0 +1,6 @@
+{
+    "textures":  {
+                     "all":  "terraforming_mars:block/rocky_regolith"
+                 },
+    "parent":  "minecraft:block/cube_all"
+}

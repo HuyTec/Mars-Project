@@ -1,0 +1,7 @@
+{
+    "variants":  {
+                     "":  {
+                              "model":  "terraforming_mars:block/oxidized_rock"
+                          }
+                 }
+}

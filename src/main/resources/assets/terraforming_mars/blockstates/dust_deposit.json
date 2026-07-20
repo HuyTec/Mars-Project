@@ -1,1 +1,7 @@
-{"variants": {"": {"model": "terraforming_mars:block/dust_deposit"}}}
+{
+    "variants":  {
+                     "":  {
+                              "model":  "terraforming_mars:block/dust_deposit"
+                          }
+                 }
+}

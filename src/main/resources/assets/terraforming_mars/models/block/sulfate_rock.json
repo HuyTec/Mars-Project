@@ -1,1 +1,6 @@
-{"parent": "minecraft:block/cube_all", "textures": {"all": "terraforming_mars:block/sulfate_rock"}}
+{
+    "textures":  {
+                     "all":  "terraforming_mars:block/sulfate_rock"
+                 },
+    "parent":  "minecraft:block/cube_all"
+}

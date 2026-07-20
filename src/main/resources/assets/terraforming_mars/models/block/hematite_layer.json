@@ -1,1 +1,6 @@
-{"parent": "minecraft:block/cube_all", "textures": {"all": "terraforming_mars:block/hematite_layer"}}
+{
+    "textures":  {
+                     "all":  "terraforming_mars:block/hematite_layer"
+                 },
+    "parent":  "minecraft:block/cube_all"
+}

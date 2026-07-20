@@ -1,0 +1,6 @@
+{
+    "textures":  {
+                     "all":  "terraforming_mars:block/opaline_silica"
+                 },
+    "parent":  "minecraft:block/cube_all"
+}

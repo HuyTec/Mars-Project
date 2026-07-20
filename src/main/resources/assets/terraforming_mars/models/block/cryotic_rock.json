@@ -1,1 +1,6 @@
-{"parent": "minecraft:block/cube_all", "textures": {"all": "terraforming_mars:block/cryotic_rock"}}
+{
+    "textures":  {
+                     "all":  "terraforming_mars:block/cryotic_rock"
+                 },
+    "parent":  "minecraft:block/cube_all"
+}

@@ -1,0 +1,7 @@
+{
+    "variants":  {
+                     "":  {
+                              "model":  "terraforming_mars:block/mars_iron_vein"
+                          }
+                 }
+}

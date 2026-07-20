@@ -1,0 +1,6 @@
+{
+    "textures":  {
+                     "all":  "terraforming_mars:block/wind_crust"
+                 },
+    "parent":  "minecraft:block/cube_all"
+}

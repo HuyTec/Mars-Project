@@ -1,0 +1,6 @@
+{
+    "textures":  {
+                     "all":  "terraforming_mars:block/clay_rich_rock"
+                 },
+    "parent":  "minecraft:block/cube_all"
+}

@@ -1,0 +1,6 @@
+{
+    "textures":  {
+                     "all":  "terraforming_mars:block/magnetite_rock"
+                 },
+    "parent":  "minecraft:block/cube_all"
+}

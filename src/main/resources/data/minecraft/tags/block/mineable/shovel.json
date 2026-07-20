@@ -1,0 +1,22 @@
+{
+    "replace":  false,
+    "values":  [
+                   "terraforming_mars:dust_deposit",
+                   "terraforming_mars:fine_dust",
+                   "terraforming_mars:compacted_dust",
+                   "terraforming_mars:wind_crust",
+                   "terraforming_mars:dust_layer",
+                   "terraforming_mars:loose_regolith",
+                   "terraforming_mars:compacted_regolith",
+                   "terraforming_mars:rocky_regolith",
+                   "terraforming_mars:iron_rich_regolith",
+                   "terraforming_mars:ice_rich_regolith",
+                   "terraforming_mars:frozen_dust",
+                   "terraforming_mars:permafrost",
+                   "terraforming_mars:salt_crust",
+                   "terraforming_mars:salt_layer",
+                   "terraforming_mars:red_gravel",
+                   "terraforming_mars:iron_gravel",
+                   "terraforming_mars:basalt_gravel"
+               ]
+}
