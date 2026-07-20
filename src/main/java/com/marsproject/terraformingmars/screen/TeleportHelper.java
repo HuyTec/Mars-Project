@@ -1,4 +1,4 @@
-package com.marsproject.terraformingmars;
+package com.marsproject.terraformingmars.screen;
 
 import net.minecraft.core.registries.Registries;
 import net.minecraft.resources.ResourceKey;

@@ -1,4 +1,4 @@
-package com.marsproject.terraformingmars;
+package com.marsproject.terraformingmars.network;
 
 import net.minecraft.network.RegistryFriendlyByteBuf;
 import net.minecraft.network.codec.StreamCodec;

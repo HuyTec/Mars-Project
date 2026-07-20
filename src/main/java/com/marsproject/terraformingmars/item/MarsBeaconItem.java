@@ -1,17 +1,11 @@
-package com.marsproject.terraformingmars;
+package com.marsproject.terraformingmars.item;
 
-import net.minecraft.core.BlockPos;
-import net.minecraft.core.registries.Registries;
-import net.minecraft.resources.ResourceKey;
-import net.minecraft.resources.ResourceLocation;
-import net.minecraft.server.level.ServerLevel;
+import com.marsproject.terraformingmars.screen.TeleportHelper;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.world.InteractionHand;
-import net.minecraft.world.InteractionResult;
 import net.minecraft.world.InteractionResultHolder;
 import net.minecraft.world.item.Item;
 import net.minecraft.world.level.Level;
-import net.minecraft.world.entity.RelativeMovement;
 
 public class MarsBeaconItem extends Item {
 

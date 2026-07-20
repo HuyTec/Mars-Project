@@ -1,5 +1,6 @@
-package com.marsproject.terraformingmars;
+package com.marsproject.terraformingmars.utils;
 
+import com.marsproject.terraformingmars.TerraformingMarsMod;
 import com.marsproject.terraformingmars.network.OpenIntroPayload;
 import net.minecraft.nbt.CompoundTag;
 import net.minecraft.server.level.ServerPlayer;

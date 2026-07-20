@@ -1,0 +1,35 @@
+{
+  "has_precipitation": false,
+  "temperature": 0.3,
+  "downfall": 0.0,
+
+  "effects": {
+    "fog_color": 11830842,
+    "sky_color": 13132872,
+    "water_color": 2500134,
+    "water_fog_color": 1184274,
+    "grass_color": 0,
+    "foliage_color": 0
+  },
+
+  "spawners": {
+    "monster": [],
+    "creature": [],
+    "ambient": [],
+    "water_creature": [],
+    "water_ambient": [],
+    "underground_water_creature": [],
+    "misc": []
+  },
+
+  "spawn_costs": {},
+
+  "carvers": {},
+
+  "features": [
+    [], [], [],
+    [], [], [],
+    [],
+    [], [], [], ["minecraft:disk_gravel"]
+  ]
+}

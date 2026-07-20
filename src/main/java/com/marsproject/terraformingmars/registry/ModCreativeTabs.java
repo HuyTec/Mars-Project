@@ -1,4 +1,4 @@
 package com.marsproject.terraformingmars.registry;
 
-public class ModCreativeTab {
+public class ModCreativeTabs {
 }

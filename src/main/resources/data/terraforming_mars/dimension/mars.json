@@ -1,0 +1,210 @@
+{
+  "type": "terraforming_mars:mars",
+  "generator": {
+    "type": "minecraft:noise",
+    "seed": 0,
+    "settings": "terraforming_mars:mars_noise",
+    "biome_source": {
+      "type": "minecraft:multi_noise",
+      "biomes": [
+
+        {
+          "biome": "terraforming_mars:dune_field",
+          "parameters": {
+            "temperature": 0,
+            "humidity": 0,
+            "depth": 0,
+            "weirdness": [-1.0, -0.5],
+            "erosion": [0.6, 1.0],
+            "continentalness": [-1.0, -0.5],
+            "offset": 0
+          }
+        },
+        {
+          "biome": "terraforming_mars:dune_field",
+          "parameters": {
+            "temperature": 0,
+            "humidity": 0,
+            "depth": 0,
+            "weirdness": [-0.5, 0.0],
+            "erosion": [0.6, 1.0],
+            "continentalness": [-0.5, 0.0],
+            "offset": 0
+          }
+        },
+        {
+          "biome": "terraforming_mars:dune_field",
+          "parameters": {
+            "temperature": 0,
+            "humidity": 0,
+            "depth": 0,
+            "weirdness": [0.0, 0.5],
+            "erosion": [0.6, 1.0],
+            "continentalness": [0.0, 0.5],
+            "offset": 0
+          }
+        },
+        {
+          "biome": "terraforming_mars:dune_field",
+          "parameters": {
+            "temperature": 0,
+            "humidity": 0,
+            "depth": 0,
+            "weirdness": [0.5, 1.0],
+            "erosion": [0.6, 1.0],
+            "continentalness": [0.5, 1.0],
+            "offset": 0
+          }
+        },
+
+        {
+          "biome": "terraforming_mars:crater_field",
+          "parameters": {
+            "temperature": 0,
+            "humidity": 0,
+            "depth": 0,
+            "weirdness": [-1.0, -0.5],
+            "erosion": [0.0, 0.6],
+            "continentalness": [-0.5, 0.5],
+            "offset": 0
+          }
+        },
+        {
+          "biome": "terraforming_mars:crater_field",
+          "parameters": {
+            "temperature": 0,
+            "humidity": 0,
+            "depth": 0,
+            "weirdness": [-0.5, 0.0],
+            "erosion": [0.0, 0.6],
+            "continentalness": [-0.5, 0.5],
+            "offset": 0
+          }
+        },
+        {
+          "biome": "terraforming_mars:crater_field",
+          "parameters": {
+            "temperature": 0,
+            "humidity": 0,
+            "depth": 0,
+            "weirdness": [0.0, 0.5],
+            "erosion": [0.0, 0.6],
+            "continentalness": [-0.5, 0.5],
+            "offset": 0
+          }
+        },
+        {
+          "biome": "terraforming_mars:crater_field",
+          "parameters": {
+            "temperature": 0,
+            "humidity": 0,
+            "depth": 0,
+            "weirdness": [0.5, 1.0],
+            "erosion": [0.0, 0.6],
+            "continentalness": [-0.5, 0.5],
+            "offset": 0
+          }
+        },
+
+        {
+          "biome": "terraforming_mars:iron_highlands",
+          "parameters": {
+            "temperature": 0,
+            "humidity": 0,
+            "depth": 0,
+            "weirdness": [-1.0, -0.5],
+            "erosion": [-1.0, 0.0],
+            "continentalness": [0.5, 1.0],
+            "offset": 0
+          }
+        },
+        {
+          "biome": "terraforming_mars:iron_highlands",
+          "parameters": {
+            "temperature": 0,
+            "humidity": 0,
+            "depth": 0,
+            "weirdness": [-0.5, 0.0],
+            "erosion": [-1.0, 0.0],
+            "continentalness": [0.5, 1.0],
+            "offset": 0
+          }
+        },
+        {
+          "biome": "terraforming_mars:iron_highlands",
+          "parameters": {
+            "temperature": 0,
+            "humidity": 0,
+            "depth": 0,
+            "weirdness": [0.0, 0.5],
+            "erosion": [-1.0, 0.0],
+            "continentalness": [0.5, 1.0],
+            "offset": 0
+          }
+        },
+        {
+          "biome": "terraforming_mars:iron_highlands",
+          "parameters": {
+            "temperature": 0,
+            "humidity": 0,
+            "depth": 0,
+            "weirdness": [0.5, 1.0],
+            "erosion": [-1.0, 0.0],
+            "continentalness": [0.5, 1.0],
+            "offset": 0
+          }
+        },
+
+        {
+          "biome": "terraforming_mars:sulfate_flats",
+          "parameters": {
+            "temperature": 0,
+            "humidity": 0,
+            "depth": 0,
+            "weirdness": [-1.0, -0.5],
+            "erosion": [-1.0, 0.2],
+            "continentalness": [-1.0, -0.5],
+            "offset": 0
+          }
+        },
+        {
+          "biome": "terraforming_mars:sulfate_flats",
+          "parameters": {
+            "temperature": 0,
+            "humidity": 0,
+            "depth": 0,
+            "weirdness": [-0.5, 0.0],
+            "erosion": [-1.0, 0.2],
+            "continentalness": [-1.0, -0.5],
+            "offset": 0
+          }
+        },
+        {
+          "biome": "terraforming_mars:sulfate_flats",
+          "parameters": {
+            "temperature": 0,
+            "humidity": 0,
+            "depth": 0,
+            "weirdness": [0.0, 0.5],
+            "erosion": [-1.0, 0.2],
+            "continentalness": [-1.0, -0.5],
+            "offset": 0
+          }
+        },
+        {
+          "biome": "terraforming_mars:sulfate_flats",
+          "parameters": {
+            "temperature": 0,
+            "humidity": 0,
+            "depth": 0,
+            "weirdness": [0.5, 1.0],
+            "erosion": [-1.0, 0.2],
+            "continentalness": [-1.0, -0.5],
+            "offset": 0
+          }
+        }
+
+      ]
+    }
+  }
+}

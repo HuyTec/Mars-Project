@@ -1,4 +1,4 @@
-package com.marsproject.terraformingmars;
+package com.marsproject.terraformingmars.screen;
 
 import com.marsproject.terraformingmars.network.IntroFinishedPayload;
 import net.minecraft.client.gui.GuiGraphics;

@@ -1,0 +1,29 @@
+{
+  "type": "minecraft:add",
+  "argument1": {
+    "type": "minecraft:mul",
+    "argument1": {
+      "type": "minecraft:shifted_noise",
+      "noise": "terraforming_mars:dune_large",
+      "xz_scale": 0.03,
+      "y_scale": 0,
+      "shift_x": 0,
+      "shift_y": 0,
+      "shift_z": 0
+    },
+    "argument2": 18.0
+  },
+  "argument2": {
+    "type": "minecraft:mul",
+    "argument1": {
+      "type": "minecraft:shifted_noise",
+      "noise": "terraforming_mars:dune_small",
+      "xz_scale": 0.15,
+      "y_scale": 0,
+      "shift_x": 0,
+      "shift_y": 0,
+      "shift_z": 0
+    },
+    "argument2": 5.0
+  }
+}

@@ -1,0 +1,15 @@
+{
+  "itemGroup.terraforming_mars": "Terraforming Mars Mod Tab",
+  "block.terraforming_mars.example_block": "",
+  "item.terraforming_mars.example_item": "",
+  "block.terraforming_mars.dust_deposit": "Dust Deposit",
+  "block.terraforming_mars.hematite_layer": "Hematite Layer",
+  "block.terraforming_mars.sulfate_rock": "Sulfate Rock",
+  "block.terraforming_mars.cryotic_rock": "Cryotic Rock",
+  "block.terraforming_mars.ironstone": "Ironstone",
+  "item.terraforming_mars.dust_deposit": "Dust Deposit",
+  "item.terraforming_mars.hematite_layer": "Hematite Layer",
+  "item.terraforming_mars.sulfate_rock": "Sulfate Rock",
+  "item.terraforming_mars.cryotic_rock": "Cryotic Rock",
+  "item.terraforming_mars.ironstone": "Ironstone"
+}
