@@ -2,5 +2,5 @@
     "textures":  {
                      "texture":  "terraforming_mars:block/dust_layer"
                  },
-    "parent":  "minecraft:block/snow_height3"
+    "parent":  "minecraft:block/snow_height6"
 }

@@ -1,0 +1,15 @@
+{
+  "type": "minecraft:block",
+  "pools": [ { "rolls": 1, "entries": [ { "type": "minecraft:item", "name": "terraforming_mars:dirty_stone" } ], "conditions": [ { "condition": "minecraft:survives_explosion" } ] } ]
+}
+{
+  "type": "minecraft:block",
+  "pools": [{
+    "rolls": 1,
+    "entries": [{
+      "type": "minecraft:item",
+      "name": "terraforming_mars:dirty_stone",
+      "functions": [{ "function": "minecraft:explosion_decay" }]
+    }]
+  }]
+}

@@ -4,6 +4,7 @@ import com.marsproject.terraformingmars.item.MarsBeaconItem;
 import com.marsproject.terraformingmars.network.IntroFinishedPayload;
 import com.marsproject.terraformingmars.network.OpenIntroPayload;
 import com.marsproject.terraformingmars.registry.ModBlocks;
+import com.marsproject.terraformingmars.registry.ModCreativeTabs;
 import com.marsproject.terraformingmars.registry.ModItems;
 import com.marsproject.terraformingmars.screen.IntroScreen;
 import com.marsproject.terraformingmars.screen.TeleportHelper;
@@ -55,19 +56,6 @@ public class TerraformingMarsMod {
     public static final DeferredItem<Item> MARS_BEACON = ITEMS.register("mars_beacon",
             () -> new MarsBeaconItem(new Item.Properties().stacksTo(1)));
 
-    public static final DeferredRegister<CreativeModeTab> CREATIVE_MODE_TABS = DeferredRegister.create(Registries.CREATIVE_MODE_TAB, MODID);
-
-
-    public static final DeferredHolder<CreativeModeTab, CreativeModeTab> EXAMPLE_TAB = CREATIVE_MODE_TABS.register("example_tab", () -> CreativeModeTab.builder()
-            .title(Component.translatable("itemGroup.terraforming_mars")) //The language key for the title of your CreativeModeTab
-            .withTabsBefore(CreativeModeTabs.COMBAT)
-            .icon(() -> ModItems.IRONSTONE_ITEM.get().getDefaultInstance())
-            .displayItems((parameters, output) -> {
-
-                ModItems.GEOLOGY_ITEMS.forEach(item -> output.accept(item.get()));
-
-            }).build());
-
     // The constructor for the mod class is the first code that is run when your mod is loaded.
     // FML will recognize some parameter types like IEventBus or ModContainer and pass them in automatically.
     public TerraformingMarsMod(IEventBus modEventBus, ModContainer modContainer) {
@@ -82,7 +70,8 @@ public class TerraformingMarsMod {
 
         ModBlocks.BLOCKS.register(modEventBus);
         ModItems.ITEMS.register(modEventBus);
-        CREATIVE_MODE_TABS.register(modEventBus);
+        ModCreativeTabs.CREATIVE_MODE_TABS.register(modEventBus);
+        
         // Register the Deferred Register to the mod event bus so items get registered
         ITEMS.register(modEventBus);
         // Register the Deferred Register to the mod event bus so tabs get registered

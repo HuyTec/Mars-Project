@@ -2,5 +2,5 @@
     "textures":  {
                      "texture":  "terraforming_mars:block/salt_layer"
                  },
-    "parent":  "minecraft:block/snow_height1"
+    "parent":  "minecraft:block/snow_height2"
 }

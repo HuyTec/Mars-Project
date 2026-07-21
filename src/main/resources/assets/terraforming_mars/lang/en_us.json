@@ -38,6 +38,8 @@
     "block.terraforming_mars.opaline_silica":  "Opaline Silica",
     "block.terraforming_mars.silica_crust":  "Silica Crust",
     "block.terraforming_mars.silica_vein":  "Silica Vein",
+    "block.terraforming_mars.apatite_vein":  "Apatite Vein (Ca5(PO4)3(OH,F,Cl))",
+    "block.terraforming_mars.feldspar_vein":  "Feldspar Vein (K-rich)",
     "block.terraforming_mars.clay_rich_rock":  "Clay-rich Rock",
     "block.terraforming_mars.smectite":  "Smectite",
     "block.terraforming_mars.bentonite":  "Bentonite",

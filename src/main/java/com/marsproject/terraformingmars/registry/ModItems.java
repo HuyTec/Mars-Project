@@ -61,6 +61,8 @@ public final class ModItems {
     public static final DeferredItem<BlockItem> OPALINE_SILICA_ITEM = blockItem("opaline_silica", ModBlocks.OPALINE_SILICA);
     public static final DeferredItem<BlockItem> SILICA_CRUST_ITEM = blockItem("silica_crust", ModBlocks.SILICA_CRUST);
     public static final DeferredItem<BlockItem> SILICA_VEIN_ITEM = blockItem("silica_vein", ModBlocks.SILICA_VEIN);
+    public static final DeferredItem<BlockItem> APATITE_VEIN_ITEM = blockItem("apatite_vein", ModBlocks.APATITE_VEIN);
+    public static final DeferredItem<BlockItem> FELDSPAR_VEIN_ITEM = blockItem("feldspar_vein", ModBlocks.FELDSPAR_VEIN);
     public static final DeferredItem<BlockItem> CLAY_RICH_ROCK_ITEM = blockItem("clay_rich_rock", ModBlocks.CLAY_RICH_ROCK);
     public static final DeferredItem<BlockItem> SMECTITE_ITEM = blockItem("smectite", ModBlocks.SMECTITE);
     public static final DeferredItem<BlockItem> BENTONITE_ITEM = blockItem("bentonite", ModBlocks.BENTONITE);
