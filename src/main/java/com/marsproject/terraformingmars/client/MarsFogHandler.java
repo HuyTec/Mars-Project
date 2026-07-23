@@ -1,6 +1,7 @@
 package com.marsproject.terraformingmars.client;
 
 import net.minecraft.client.Minecraft;
+import net.minecraft.resources.ResourceLocation;
 import net.neoforged.bus.api.SubscribeEvent;
 import net.neoforged.fml.common.EventBusSubscriber;
 import net.neoforged.neoforge.client.event.ViewportEvent;
@@ -14,10 +15,12 @@ public class MarsFogHandler {
         var level = Minecraft.getInstance().level;
         if (level == null) return;
 
-        // Chỉ tắt fog khi ở dimension Mars
-        if (level.dimension().location().equals(
-               new net.minecraft.resources.ResourceLocation("terraforming_mars:mars"))) {
-            event.setCanceled(true);
+        if (level.dimension().location().equals(new
+                ResourceLocation("terraforming_mars:mars"))) {
+
+            // Đẩy fog ra xa hơn thay vì tắt hẳn -> fog "nhạt" hơn, ít che tầm nhìn
+            event.setNearPlaneDistance(event.getFarPlaneDistance() * 0.6F);
+            event.setFarPlaneDistance(event.getFarPlaneDistance() * 1.8F);
         }
     }
 }

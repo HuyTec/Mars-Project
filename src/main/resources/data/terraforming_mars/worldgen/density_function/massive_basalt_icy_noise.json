@@ -1,6 +1,6 @@
 ﻿{
   "type": "minecraft:shifted_noise",
-  "noise": "minecraft:ridges",
+  "noise": "minecraft:ridge",
   "xz_scale": 0.02,
   "y_scale": 0.05,
   "shift_x": "minecraft:shift_x",

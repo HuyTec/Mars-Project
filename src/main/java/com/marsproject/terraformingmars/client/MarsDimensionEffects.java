@@ -16,6 +16,7 @@ public class MarsDimensionEffects extends DimensionSpecialEffects {
     // Mau suong mu: do dam dac (barren) -> xanh xam nhat hon khi khi quyen day len
     private static final Vec3 FOG_BARREN = new Vec3(0.78D, 0.48D, 0.32D);
     private static final Vec3 FOG_TERRAFORMED = new Vec3(0.55D, 0.62D, 0.72D);
+    private static final double fogStrength = 0.1D;
 
     public MarsDimensionEffects() {
         super(Float.NaN, true, SkyType.NORMAL, false, false);
@@ -28,10 +29,14 @@ public class MarsDimensionEffects extends DimensionSpecialEffects {
         return Mth.clamp((float) (data.terraformProgress()), 0F, 1F);
     }
 
+    @Override
+    public float getCloudHeight() {
+        return Float.NaN;
+    }
+
     @Nullable
     @Override
     public float[] getSunriseColor(float timeOfDay, float partialTick) {
-        System.out.println("SUNRISE CALLED");
         float threshold = 0.4F;
         float angle = Mth.cos(timeOfDay * ((float) Math.PI * 2F));
 
@@ -40,14 +45,10 @@ public class MarsDimensionEffects extends DimensionSpecialEffects {
             float alpha = Mth.sin(t * (float) Math.PI);
             alpha *= alpha;
 
-            float progress = getProgress01();
-            // Khi quyen cang day (progress cao) -> hoang hon ro/dam net hon
-            float alphaScale = Mth.lerp(progress, 0.4F, 0.85F);
-
             colorData[0] = 0.30F;
             colorData[1] = 0.55F;
             colorData[2] = 0.90F;
-            colorData[3] = alpha * alphaScale;
+            colorData[3] = alpha * 0.85F;
 
             return colorData;
         }
@@ -57,13 +58,11 @@ public class MarsDimensionEffects extends DimensionSpecialEffects {
 
     @Override
     public Vec3 getBrightnessDependentFogColor(Vec3 color, float brightness) {
-        float progress = getProgress01();
-        Vec3 baseFog = FOG_BARREN.lerp(FOG_TERRAFORMED, progress);
-
+        // Sương bụi đỏ của Sao Hỏa
         return new Vec3(
-                baseFog.x * (0.35D + brightness * 0.65D),
-                baseFog.y * (0.35D + brightness * 0.65D),
-                baseFog.z * (0.35D + brightness * 0.65D)
+                0.78D * (0.35D + brightness * 0.65D),
+                0.48D * (0.35D + brightness * 0.65D),
+                0.32D * (0.35D + brightness * 0.65D)
         );
     }
 
@@ -77,8 +76,6 @@ public class MarsDimensionEffects extends DimensionSpecialEffects {
                              Matrix4f modelViewMatrix, Camera camera,
                              Matrix4f projectionMatrix, boolean isFoggy,
                              Runnable setupFog) {
-
-        System.out.println("MarsDimensionEffects.renderSky()");
         setupFog.run();
 
         MarsSkyRenderer.init();

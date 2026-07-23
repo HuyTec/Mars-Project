@@ -3,6 +3,7 @@ package com.marsproject.terraformingmars.event;
 import com.marsproject.terraformingmars.screen.TeleportHelper;
 import net.minecraft.world.entity.Entity;
 import net.minecraft.world.entity.LivingEntity;
+import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.phys.Vec3;
 import net.neoforged.bus.api.SubscribeEvent;
 import net.neoforged.fml.common.EventBusSubscriber;
@@ -26,6 +27,9 @@ public class MarsGravityHandler {
         if (!living.level().dimension().equals(TeleportHelper.MARS_LEVEL_KEY)) return;
         if (living.isNoGravity()) return;
         if (living.onGround()) return;
+        if (entity instanceof Player player && player.isCreative()) {
+            return;
+        }
 
         double compensation = VANILLA_GRAVITY * (1.0D - MARS_GRAVITY_FACTOR);
         Vec3 motion = living.getDeltaMovement();

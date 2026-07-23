@@ -19,21 +19,22 @@ public class MarsAirSupplyHandler {
     @SubscribeEvent
     public static void onLivingBreathe(LivingBreatheEvent event) {
         LivingEntity entity = event.getEntity();
-        if (!(entity instanceof ServerPlayer player)) return;
-        if (player.isCreative() || player.isSpectator()) return;
-        if (!player.level().dimension().equals(TeleportHelper.MARS_LEVEL_KEY)) return;
 
-        // Vanilla mac dinh nghi la "tho duoc" vi khong o duoi nuoc.
-        // Neu moi truong Mars khong an toan, ep canBreathe = false
-        // de vanilla tu tru khi va tu gay damage drown khi het khi.
+        if (entity.level().isClientSide()) return;
+        if (!(entity.level() instanceof ServerLevel serverLevel)) return;
+
+        if (entity instanceof ServerPlayer player) {
+            if (player.isCreative() || player.isSpectator()) return;
+        }
+
+        if (!entity.level().dimension().equals(TeleportHelper.MARS_LEVEL_KEY)) return;
+
         if (event.canBreathe()) {
-            float progress = MarsTerraformProgress.get((ServerLevel) player.level()).getProgress();
+            float progress = MarsTerraformProgress.get(serverLevel).getProgress();
             MarsEnvironmentStage stage = MarsEnvironmentManager.resolve(progress);
 
             if (!MarsEnvironmentManager.canLive(stage)) {
                 event.setCanBreathe(false);
-                // Neu muon khi mat nhanh hon mac dinh (1/tick), co the tang:
-                // event.setConsumeAirAmount(2);
             }
         }
     }
