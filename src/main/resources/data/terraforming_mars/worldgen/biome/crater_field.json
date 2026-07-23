@@ -15,24 +15,32 @@
     }
   },
   "carvers": {
-    "air": [
-      "minecraft:cave"
-    ]
+    "air": ["minecraft:cave", "minecraft:canyon"]
   },
   "features": [
     [],
     [],
-    [],
-    [],
-    [],
-    [],
-    [],
+    ["terraforming_mars:iron_boulder_placed", "terraforming_mars:basalt_boulder_placed"],
     [],
     [],
     [],
     [
-    "minecraft:disk_gravel"
-    ]
+      "minecraft:ore_coal_upper",
+      "minecraft:ore_coal_lower",
+      "minecraft:ore_redstone",
+      "minecraft:ore_lapis",
+      "terraforming_mars:mars_rare_iron_ore",
+      "terraforming_mars:mars_rare_gold_ore",
+      "terraforming_mars:mars_rare_diamond_ore",
+      "terraforming_mars:mars_iron_ore_placed",
+      "terraforming_mars:hematite_ore_placed",
+      "terraforming_mars:apatite_ore_placed",
+      "terraforming_mars:feldspar_ore_placed"
+    ],
+    [],
+    [],
+    [],
+    ["minecraft:disk_gravel"]
   ],
   "spawners": {
     "monster": [],

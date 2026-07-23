@@ -1,40 +1,39 @@
 package com.marsproject.terraformingmars.client.renderer;
 
+import com.marsproject.terraformingmars.client.ClientMarsEnvironmentData;
+import com.marsproject.terraformingmars.network.MarsEnvironmentSyncPayload;
 import com.mojang.blaze3d.systems.RenderSystem;
 import com.mojang.blaze3d.vertex.*;
 import net.minecraft.client.Camera;
 import net.minecraft.client.multiplayer.ClientLevel;
 import net.minecraft.client.renderer.GameRenderer;
-import net.minecraft.resources.ResourceLocation;
 import net.minecraft.util.Mth;
 import net.minecraft.util.RandomSource;
 import org.joml.Matrix4f;
 
 public class MarsSkyRenderer {
 
-    private static final ResourceLocation MILKY_WAY =
-            new ResourceLocation("terraforming_mars", "textures/environment/milky_way.png");
-
-    private static final float MILKY_WAY_RADIUS = 120F;
     private static final int LAT_SEGMENTS = 32;
     private static final int LON_SEGMENTS = 64;
 
-    private static final long STAR_SEED = 20260615L; // cố định để pattern sao không đổi mỗi lần load
+    private static final long STAR_SEED = 20260615L;
     private static final int STAR_COUNT = 1200;
-    private static final float STAR_RADIUS = 100F; // nhỏ hơn dải Milky Way -> sao nằm "phía trước"
+    private static final float STAR_RADIUS = 100F;
     private static final float STAR_MIN_SIZE = 0.15F;
     private static final float STAR_MAX_SIZE = 0.55F;
 
-    private static VertexBuffer milkyWayBuffer;
     private static VertexBuffer starBuffer;
+    private static VertexBuffer skyDomeBuffer;
+    private static final float SKY_DOME_RADIUS = 140F;
 
-    /** Gọi một lần khi client load. */
+    private static long lastDebug = 0;
+
     public static void init() {
-        if (milkyWayBuffer != null) return;
+        if (skyDomeBuffer != null) return;
 
         BufferBuilder builder = Tesselator.getInstance().getBuilder();
 
-//        milkyWayBuffer = upload(buildMilkyWay(builder));
+        skyDomeBuffer = upload(buildSkyDome(builder));
         starBuffer = upload(buildStarField(builder, RandomSource.create(STAR_SEED)));
     }
 
@@ -46,38 +45,65 @@ public class MarsSkyRenderer {
         return buffer;
     }
 
-    // ---------- Milky Way band (giữ nguyên logic cũ) ----------
+    private static BufferBuilder.RenderedBuffer buildSkyDome(BufferBuilder builder) {
+        builder.begin(VertexFormat.Mode.QUADS, DefaultVertexFormat.POSITION);
 
-//    private static BufferBuilder.RenderedBuffer buildMilkyWay(BufferBuilder builder) {
-//        builder.begin(VertexFormat.Mode.QUADS, DefaultVertexFormat.POSITION_TEX);
-//
-//        for (int lat = 0; lat < LAT_SEGMENTS; lat++) {
-//            float v0 = 1F - (float) lat / LAT_SEGMENTS;
-//            float v1 = 1F - (float) (lat + 1) / LAT_SEGMENTS;
-//            double theta0 = Math.PI * lat / LAT_SEGMENTS;
-//            double theta1 = Math.PI * (lat + 1) / LAT_SEGMENTS;
-//
-//            for (int lon = 0; lon < LON_SEGMENTS; lon++) {
-//                float u0 = (float) lon / LON_SEGMENTS;
-//                float u1 = (float) (lon + 1) / LON_SEGMENTS;
-//                double phi0 = Math.PI * 2 * lon / LON_SEGMENTS;
-//                double phi1 = Math.PI * 2 * (lon + 1) / LON_SEGMENTS;
-//
-//                float[] a = spherePoint(MILKY_WAY_RADIUS, theta0, phi0);
-//                float[] b = spherePoint(MILKY_WAY_RADIUS, theta0, phi1);
-//                float[] c = spherePoint(MILKY_WAY_RADIUS, theta1, phi1);
-//                float[] d = spherePoint(MILKY_WAY_RADIUS, theta1, phi0);
-//
-//                // Đảo thứ tự: sphere nhìn từ bên trong
-//                addTex(builder, d, u0, v1);
-//                addTex(builder, c, u1, v1);
-//                addTex(builder, b, u1, v0);
-//                addTex(builder, a, u0, v0);
-//            }
-//        }
-//
-//        return builder.end();
-//    }
+        for (int lat = 0; lat < LAT_SEGMENTS; lat++) {
+            double theta0 = Math.PI * lat / LAT_SEGMENTS;
+            double theta1 = Math.PI * (lat + 1) / LAT_SEGMENTS;
+
+            for (int lon = 0; lon < LON_SEGMENTS; lon++) {
+                double phi0 = Math.PI * 2 * lon / LON_SEGMENTS;
+                double phi1 = Math.PI * 2 * (lon + 1) / LON_SEGMENTS;
+
+                float[] a = spherePoint(SKY_DOME_RADIUS, theta0, phi0);
+                float[] b = spherePoint(SKY_DOME_RADIUS, theta0, phi1);
+                float[] c = spherePoint(SKY_DOME_RADIUS, theta1, phi1);
+                float[] d = spherePoint(SKY_DOME_RADIUS, theta1, phi0);
+
+                addPos(builder, d);
+                addPos(builder, c);
+                addPos(builder, b);
+                addPos(builder, a);
+            }
+        }
+
+        return builder.end();
+    }
+
+    private static void addPos(BufferBuilder builder, float[] pos) {
+        builder.vertex(pos[0], pos[1], pos[2]).endVertex();
+    }
+
+    private static float[] computeSkyColor(float timeOfDay, float progress) {
+        float angle = Mth.cos(timeOfDay * ((float) Math.PI * 2F));
+        float dayFactor = Mth.clamp(angle * 1.5F, -1F, 1F) * 0.5F + 0.5F;
+
+        float[] dayColor    = {0.40F, 0.62F, 0.92F};
+        float[] nightColor  = {0.03F, 0.04F, 0.09F};
+        float[] sunsetColor = {0.85F, 0.45F, 0.20F};
+        float[] dustColor   = {0.55F, 0.40F, 0.30F};
+
+        float threshold = 0.4F;
+        float sunsetWeight = 0F;
+        if (angle >= -threshold && angle <= threshold) {
+            float t = (angle + threshold) / (threshold * 2F);
+            sunsetWeight = Mth.sin(t * (float) Math.PI);
+        }
+
+        float[] base = lerpColor(nightColor, dayColor, dayFactor);
+        float[] withSunset = lerpColor(base, sunsetColor, sunsetWeight * 0.7F);
+
+        return lerpColor(dustColor, withSunset, progress);
+    }
+
+    private static float[] lerpColor(float[] from, float[] to, float t) {
+        return new float[]{
+                Mth.lerp(t, from[0], to[0]),
+                Mth.lerp(t, from[1], to[1]),
+                Mth.lerp(t, from[2], to[2])
+        };
+    }
 
     private static float[] spherePoint(float radius, double theta, double phi) {
         float x = (float) (radius * Math.sin(theta) * Math.cos(phi));
@@ -85,12 +111,6 @@ public class MarsSkyRenderer {
         float z = (float) (radius * Math.sin(theta) * Math.sin(phi));
         return new float[]{x, y, z};
     }
-
-    private static void addTex(BufferBuilder builder, float[] pos, float u, float v) {
-        builder.vertex(pos[0], pos[1], pos[2]).uv(u, v).endVertex();
-    }
-
-    // ---------- Star field (mới) ----------
 
     private static BufferBuilder.RenderedBuffer buildStarField(BufferBuilder builder, RandomSource random) {
         builder.begin(VertexFormat.Mode.QUADS, DefaultVertexFormat.POSITION_COLOR);
@@ -103,7 +123,6 @@ public class MarsSkyRenderer {
     }
 
     private static void addStarQuad(BufferBuilder builder, RandomSource random) {
-        // 1. Điểm ngẫu nhiên phân bố đều trên mặt cầu
         double theta = Math.acos(2 * random.nextFloat() - 1);
         double phi = 2 * Math.PI * random.nextFloat();
 
@@ -113,9 +132,8 @@ public class MarsSkyRenderer {
 
         float nx = px / STAR_RADIUS, ny = py / STAR_RADIUS, nz = pz / STAR_RADIUS;
 
-        // 2. Cơ sở tiếp tuyến vuông góc với pháp tuyến (nx,ny,nz)
         float upX = 0F, upY = 1F, upZ = 0F;
-        if (Math.abs(ny) > 0.99F) { // tránh song song ở 2 cực
+        if (Math.abs(ny) > 0.99F) {
             upX = 1F; upY = 0F;
         }
 
@@ -129,13 +147,11 @@ public class MarsSkyRenderer {
         float t2y = nz * t1x - nx * t1z;
         float t2z = nx * t1y - ny * t1x;
 
-        // 3. Xoay ngẫu nhiên quanh pháp tuyến để các sao không đồng dạng
         float angle = random.nextFloat() * (float) (Math.PI * 2);
         float cos = Mth.cos(angle), sin = Mth.sin(angle);
         float rx = t1x * cos + t2x * sin, ry = t1y * cos + t2y * sin, rz = t1z * cos + t2z * sin;
         float sx = -t1x * sin + t2x * cos, sy = -t1y * sin + t2y * cos, sz = -t1z * sin + t2z * cos;
 
-        // 4. Kích thước & độ sáng ngẫu nhiên cho từng sao
         float size = STAR_MIN_SIZE + random.nextFloat() * (STAR_MAX_SIZE - STAR_MIN_SIZE);
         float brightness = 0.4F + random.nextFloat() * 0.6F;
 
@@ -149,28 +165,56 @@ public class MarsSkyRenderer {
         builder.vertex(x, y, z).color(brightness, brightness, brightness, 1F).endVertex();
     }
 
-    // ---------- Render ----------
-
     public static void render(ClientLevel level, float partialTick, Matrix4f modelView, Matrix4f projection, Camera camera) {
-        if (milkyWayBuffer == null || starBuffer == null) return;
+        if (skyDomeBuffer == null || starBuffer == null) return;
 
-        float brightness = level.getStarBrightness(partialTick);
-        if (brightness <= 0.01F) return;
+        float timeOfDay = level.getTimeOfDay(partialTick);
+        MarsEnvironmentSyncPayload data = ClientMarsEnvironmentData.get();
+
+        long now = System.currentTimeMillis();
+
+        if (now - lastDebug > 1000) {
+            lastDebug = now;
+
+            System.out.println("========== MARS SKY ==========");
+            System.out.println("Time      : " + level.getTimeOfDay(partialTick));
+            System.out.println("Star      : " + level.getStarBrightness(partialTick));
+            System.out.println("Camera    : " + camera.getPosition());
+
+            if (data == null) {
+                System.out.println("Payload   : NULL");
+            } else {
+                System.out.println("Progress  : " + data.terraformProgress());
+            }
+
+            System.out.println("SkyBuffer : " + (skyDomeBuffer != null));
+            System.out.println("StarBuf   : " + (starBuffer != null));
+        }
+
+        float progress = 0F;
+
+        if (data != null) {
+            progress = Mth.clamp((float) data.terraformProgress(), 0F, 1F);
+        }
+
+        float[] skyColor = computeSkyColor(timeOfDay, progress);
 
         RenderSystem.depthMask(false);
         RenderSystem.disableCull();
+
+        RenderSystem.setShader(GameRenderer::getPositionShader);
+        RenderSystem.setShaderColor(skyColor[0], skyColor[1], skyColor[2], 1F);
+        skyDomeBuffer.drawWithShader(modelView, projection, RenderSystem.getShader());
+
         RenderSystem.enableBlend();
         RenderSystem.defaultBlendFunc();
 
-        // Dải Milky Way vẽ trước (nền), sao riêng lẻ vẽ sau (nổi lên trên)
-        RenderSystem.setShader(GameRenderer::getPositionTexShader);
-        RenderSystem.setShaderTexture(0, MILKY_WAY);
-        RenderSystem.setShaderColor(1F, 1F, 1F, brightness * 0.45F);
-        milkyWayBuffer.drawWithShader(modelView, projection, RenderSystem.getShader());
-
-        RenderSystem.setShader(GameRenderer::getPositionColorShader);
-        RenderSystem.setShaderColor(brightness, brightness, brightness, brightness);
-        starBuffer.drawWithShader(modelView, projection, RenderSystem.getShader());
+        float starBrightness = level.getStarBrightness(partialTick);
+        if (starBrightness > 0.01F) {
+            RenderSystem.setShader(GameRenderer::getPositionColorShader);
+            RenderSystem.setShaderColor(starBrightness, starBrightness, starBrightness, starBrightness);
+            starBuffer.drawWithShader(modelView, projection, RenderSystem.getShader());
+        }
 
         RenderSystem.setShaderColor(1F, 1F, 1F, 1F);
         RenderSystem.disableBlend();

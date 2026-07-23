@@ -58,5 +58,6 @@
     "block.terraforming_mars.basalt_boulder":  "Basalt Boulder",
     "block.terraforming_mars.iron_boulder":  "Iron Boulder",
     "block.terraforming_mars.cryotic_boulder":  "Cryotic Boulder",
-    "block.terraforming_mars.sulfate_boulder":  "Sulfate Boulder"
+    "block.terraforming_mars.sulfate_boulder":  "Sulfate Boulder",
+    "effect.terraforming_mars.radiation_attack": "Radiation Attack"
 }

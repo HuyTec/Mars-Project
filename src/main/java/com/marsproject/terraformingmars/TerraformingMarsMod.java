@@ -1,15 +1,23 @@
 package com.marsproject.terraformingmars;
 
+import com.marsproject.terraformingmars.client.ClientMarsEnvironmentData;
+import com.marsproject.terraformingmars.client.MarsEnvironmentHud;
+import com.marsproject.terraformingmars.command.MarsCommands;
+import com.marsproject.terraformingmars.environment.MarsEnvironmentStageLoader;
 import com.marsproject.terraformingmars.item.MarsBeaconItem;
 import com.marsproject.terraformingmars.network.IntroFinishedPayload;
+import com.marsproject.terraformingmars.network.MarsEnvironmentSyncPayload;
 import com.marsproject.terraformingmars.network.OpenIntroPayload;
 import com.marsproject.terraformingmars.registry.ModBlocks;
 import com.marsproject.terraformingmars.registry.ModCreativeTabs;
+import com.marsproject.terraformingmars.registry.ModEffects;
 import com.marsproject.terraformingmars.registry.ModItems;
 import com.marsproject.terraformingmars.screen.IntroScreen;
 import com.marsproject.terraformingmars.screen.TeleportHelper;
 import net.minecraft.client.KeyMapping;
+import net.minecraft.resources.ResourceLocation;
 import net.neoforged.neoforge.client.event.ClientTickEvent;
+import net.neoforged.neoforge.client.event.RegisterGuiLayersEvent;
 import net.neoforged.neoforge.client.event.RegisterKeyMappingsEvent;
 import net.neoforged.neoforge.network.event.RegisterPayloadHandlersEvent;
 import net.neoforged.neoforge.network.registration.PayloadRegistrar;
@@ -71,6 +79,8 @@ public class TerraformingMarsMod {
         ModBlocks.BLOCKS.register(modEventBus);
         ModItems.ITEMS.register(modEventBus);
         ModCreativeTabs.CREATIVE_MODE_TABS.register(modEventBus);
+
+        ModEffects.EFFECTS.register(modEventBus);
         
         // Register the Deferred Register to the mod event bus so items get registered
         ITEMS.register(modEventBus);
@@ -80,6 +90,11 @@ public class TerraformingMarsMod {
         // Note that this is necessary if and only if we want *this* class (ExampleMod) to respond directly to events.
         // Do not add this line if there are no @SubscribeEvent-annotated functions in this class, like onServerStarting() below.
         NeoForge.EVENT_BUS.register(this);
+        NeoForge.EVENT_BUS.addListener((net.neoforged.neoforge.event.AddReloadListenerEvent event) ->
+                event.addListener(new MarsEnvironmentStageLoader()));
+
+        NeoForge.EVENT_BUS.addListener((net.neoforged.neoforge.event.RegisterCommandsEvent event) ->
+                MarsCommands.register(event.getDispatcher()));
 
         // Register our mod's ModConfigSpec so that FML can create and load the config file for us
         modContainer.registerConfig(ModConfig.Type.COMMON, Config.SPEC);
@@ -104,6 +119,12 @@ public class TerraformingMarsMod {
                         TeleportHelper.teleportToMars(serverPlayer);
                     }
                 })
+        );
+
+        registrar.playToClient(
+                MarsEnvironmentSyncPayload.TYPE,
+                MarsEnvironmentSyncPayload.STREAM_CODEC,
+                (payload, context) -> context.enqueueWork(() -> ClientMarsEnvironmentData.update(payload))
         );
     }
 
@@ -154,6 +175,17 @@ public class TerraformingMarsMod {
             event.register(
                     new net.minecraft.resources.ResourceLocation("terraforming_mars", "mars_effects"),
                     new com.marsproject.terraformingmars.client.MarsDimensionEffects()
+            );
+        }
+
+        @SubscribeEvent
+        static void registerGuiLayers(RegisterGuiLayersEvent event) {
+            event.registerAboveAll(
+                    new ResourceLocation(
+                            TerraformingMarsMod.MODID,
+                            "mars_environment"
+                    ),
+                    new MarsEnvironmentHud()
             );
         }
     }

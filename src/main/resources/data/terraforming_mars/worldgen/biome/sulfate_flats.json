@@ -20,9 +20,11 @@
       "minecraft:cave_extra_underground"
     ]
   },
-  "features": [[], [], [], [], [], [], [], [], [], [
-    "minecraft:disk_gravel"
-  ]],
+  "features": [
+    [], [], ["terraforming_mars:sulfate_boulder_placed"], [], [], [],
+    ["terraforming_mars:sulfate_ore_placed"],
+    [], [], ["minecraft:disk_gravel"]
+  ],
   "spawners": {
     "monster": [], "creature": [], "ambient": [],
     "water_creature": [], "underground_water_creature": [],

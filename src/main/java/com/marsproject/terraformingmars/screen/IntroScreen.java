@@ -35,7 +35,7 @@ public class IntroScreen extends Screen {
     public void render(GuiGraphics guiGraphics, int mouseX, int mouseY, float partialTick) {
         guiGraphics.blit(PLACEHOLDER_IMAGE, 0, 0, this.width, this.height, 0, 0, 1920, 1080, 1920, 1080);
 
-        float scale = 3.0f; // Chữ to gấp 3 lần mặc định, chỉnh số này để tăng/giảm
+        float scale = 2.0f; // Chữ to gấp 3 lần mặc định, chỉnh số này để tăng/giảm
 
         guiGraphics.pose().pushPose();
         guiGraphics.pose().scale(scale, scale, scale);

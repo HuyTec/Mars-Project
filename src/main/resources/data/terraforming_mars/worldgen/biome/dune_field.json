@@ -24,10 +24,12 @@
 
   "spawn_costs": {},
 
-  "carvers": {},
+  "carvers": {
+    "air": ["minecraft:cave"]
+  },
 
   "features": [
-    [], [], [],
+    [], [], ["terraforming_mars:basalt_boulder_placed"],
     [], [], [],
     [],
     [], [], [], ["minecraft:disk_gravel"]

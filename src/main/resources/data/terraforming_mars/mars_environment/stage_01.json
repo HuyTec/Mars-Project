@@ -1,0 +1,15 @@
+{
+  "progress": 1.0,
+  "radiation": 0.05,
+  "magnetic_field_percent": 100.0,
+  "temperature_celsius": 15.0,
+  "water_percent": 70.0,
+  "atmosphere_pressure_percent": 100.0,
+  "atmosphere_composition": {
+    "nitrogen": 78.0,
+    "oxygen": 21.0,
+    "argon": 0.93,
+    "carbon_dioxide": 0.04
+  },
+  "biology_percent": 100.0
+}

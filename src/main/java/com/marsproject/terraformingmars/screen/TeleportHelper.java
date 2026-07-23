@@ -6,15 +6,18 @@ import net.minecraft.resources.ResourceLocation;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.world.entity.RelativeMovement;
+import net.minecraft.world.level.Level;
 
 import java.util.Set;
 
 public class TeleportHelper {
 
+    public static final ResourceKey<Level> MARS_LEVEL_KEY = ResourceKey.create(
+            Registries.DIMENSION,
+            new ResourceLocation("terraforming_mars", "mars"));
+
     public static void teleportToMars(ServerPlayer serverPlayer) {
-        ServerLevel targetLevel = serverPlayer.server.getLevel(
-                ResourceKey.create(Registries.DIMENSION,
-                        new ResourceLocation("terraforming_mars", "mars")));
+        ServerLevel targetLevel = serverPlayer.server.getLevel(MARS_LEVEL_KEY);
 
         if (targetLevel != null) {
             serverPlayer.teleportTo(targetLevel, serverPlayer.getX(), 100, serverPlayer.getZ(),
