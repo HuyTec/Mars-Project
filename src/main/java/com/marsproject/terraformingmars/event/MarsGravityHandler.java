@@ -1,6 +1,7 @@
 package com.marsproject.terraformingmars.event;
 
 import com.marsproject.terraformingmars.screen.TeleportHelper;
+
 import net.minecraft.world.entity.Entity;
 import net.minecraft.world.entity.LivingEntity;
 import net.minecraft.world.entity.player.Player;
@@ -8,7 +9,6 @@ import net.minecraft.world.phys.Vec3;
 import net.neoforged.bus.api.SubscribeEvent;
 import net.neoforged.fml.common.EventBusSubscriber;
 import net.neoforged.neoforge.event.tick.EntityTickEvent;
-
 import com.marsproject.terraformingmars.TerraformingMarsMod;
 
 @EventBusSubscriber(modid = TerraformingMarsMod.MODID)
@@ -27,7 +27,7 @@ public class MarsGravityHandler {
         if (!living.level().dimension().equals(TeleportHelper.MARS_LEVEL_KEY)) return;
         if (living.isNoGravity()) return;
         if (living.onGround()) return;
-        if (entity instanceof Player player && player.isCreative()) {
+        if (entity instanceof Player player && (player.isCreative() || player.isSpectator())) {
             return;
         }
 

@@ -1,9 +1,12 @@
 package com.marsproject.terraformingmars.client.renderer;
 
+import com.mojang.blaze3d.platform.GlStateManager;
 import com.mojang.blaze3d.systems.RenderSystem;
 import com.mojang.blaze3d.vertex.*;
 import net.minecraft.client.Camera;
+import net.minecraft.client.Minecraft;
 import net.minecraft.client.multiplayer.ClientLevel;
+import net.minecraft.client.renderer.FogRenderer;
 import net.minecraft.client.renderer.GameRenderer;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.util.Mth;
@@ -13,7 +16,13 @@ import org.joml.Matrix4f;
 public class MarsSkyRenderer {
 
     private static final ResourceLocation MILKY_WAY =
-            new ResourceLocation("terraforming_mars", "textures/environment/milky_way.png");
+            new ResourceLocation("terraforming_mars", "textures/environment/milkyway.png");
+
+    private static final ResourceLocation MARS_MOON = new
+            ResourceLocation(
+                    "terraforming_mars",
+                    "textures/environment/moon_phases.png"
+            );
 
     private static final float MILKY_WAY_RADIUS = 120F;
     private static final int LAT_SEGMENTS = 32;
@@ -25,18 +34,26 @@ public class MarsSkyRenderer {
     private static final float STAR_MIN_SIZE = 0.15F;
     private static final float STAR_MAX_SIZE = 0.55F;
 
-    private static VertexBuffer milkyWayBuffer;
-    private static VertexBuffer starBuffer;
 
-    /** Gọi một lần khi client load. */
-    public static void init() {
-        if (milkyWayBuffer != null) return;
+    private final MarsVanillaSkyRenderer skyRenderer;
 
-        BufferBuilder builder = Tesselator.getInstance().getBuilder();
 
-//        milkyWayBuffer = upload(buildMilkyWay(builder));
-        starBuffer = upload(buildStarField(builder, RandomSource.create(STAR_SEED)));
+    public MarsSkyRenderer(Minecraft minecraft) {
+        // tạo máy render trời
+        this.skyRenderer = new MarsVanillaSkyRenderer(minecraft);
     }
+
+
+    public void setLevel(ClientLevel level) {
+        // báo cho renderer biết dimension hiện tại
+        this.skyRenderer.setLevel(level);
+    }
+
+    public void tick() {
+        // tăng tick để sao/mặt trời chạy đúng
+        this.skyRenderer.tick();
+    }
+
 
     private static VertexBuffer upload(BufferBuilder.RenderedBuffer rendered) {
         VertexBuffer buffer = new VertexBuffer(VertexBuffer.Usage.STATIC);
@@ -149,32 +166,66 @@ public class MarsSkyRenderer {
         builder.vertex(x, y, z).color(brightness, brightness, brightness, 1F).endVertex();
     }
 
+    private static void renderMoon(
+            ClientLevel level,
+            float partialTick,
+            Matrix4f modelView,
+            Matrix4f projection
+    ) {
+        RenderSystem.setShader(GameRenderer::getPositionTexShader);
+        RenderSystem.setShaderTexture(0, MARS_MOON);
+        RenderSystem.setShaderColor(1F, 1F, 1F, 1F);
+
+        BufferBuilder builder = Tesselator.getInstance().getBuilder();
+        BufferBuilder.RenderedBuffer rendered;
+
+        float size = 20.0F;
+        float distance = 100.0F;
+
+        builder.begin(VertexFormat.Mode.QUADS, DefaultVertexFormat.POSITION_TEX);
+
+        builder.vertex(-size, distance, -size).uv(0, 1).endVertex();
+        builder.vertex( size, distance, -size).uv(1, 1).endVertex();
+        builder.vertex( size, distance,  size).uv(1, 0).endVertex();
+        builder.vertex(-size, distance,  size).uv(0, 0).endVertex();
+
+        rendered = builder.end();
+
+        BufferUploader.drawWithShader(rendered);
+    }
     // ---------- Render ----------
 
-    public static void render(ClientLevel level, float partialTick, Matrix4f modelView, Matrix4f projection, Camera camera) {
-        if (milkyWayBuffer == null || starBuffer == null) return;
+//    public static void render(ClientLevel level, float partialTick, Matrix4f modelView, Matrix4f projection, Camera camera) {
+//        if (milkyWayBuffer == null || starBuffer == null) return;
+//
+//        float brightness = level.getStarBrightness(partialTick);
+//        if (brightness <= 0.01F) return;
+//
+//        RenderSystem.depthMask(false);
+//        RenderSystem.disableCull();
+//        RenderSystem.enableBlend();
+//        RenderSystem.defaultBlendFunc();
+//
+//        // Dải Milky Way vẽ trước (nền), sao riêng lẻ vẽ sau (nổi lên trên)
+//        RenderSystem.setShader(GameRenderer::getPositionTexShader);
+//        RenderSystem.setShaderTexture(0, MILKY_WAY);
+//        RenderSystem.setShaderColor(1F, 1F, 1F, brightness * 0.45F);
+//        milkyWayBuffer.drawWithShader(modelView, projection, RenderSystem.getShader());
+//
+//        RenderSystem.setShader(GameRenderer::getPositionColorShader);
+//        RenderSystem.setShaderColor(brightness, brightness, brightness, brightness);
+//        starBuffer.drawWithShader(modelView, projection, RenderSystem.getShader());
+//
+//        renderMoon(level, partialTick, modelView, projection);
+//
+//        RenderSystem.setShaderColor(1F, 1F, 1F, 1F);
+//        RenderSystem.disableBlend();
+//        RenderSystem.enableCull();
+//        RenderSystem.depthMask(true);
+//    }
 
-        float brightness = level.getStarBrightness(partialTick);
-        if (brightness <= 0.01F) return;
-
-        RenderSystem.depthMask(false);
-        RenderSystem.disableCull();
-        RenderSystem.enableBlend();
-        RenderSystem.defaultBlendFunc();
-
-        // Dải Milky Way vẽ trước (nền), sao riêng lẻ vẽ sau (nổi lên trên)
-        RenderSystem.setShader(GameRenderer::getPositionTexShader);
-        RenderSystem.setShaderTexture(0, MILKY_WAY);
-        RenderSystem.setShaderColor(1F, 1F, 1F, brightness * 0.45F);
-        milkyWayBuffer.drawWithShader(modelView, projection, RenderSystem.getShader());
-
-        RenderSystem.setShader(GameRenderer::getPositionColorShader);
-        RenderSystem.setShaderColor(brightness, brightness, brightness, brightness);
-        starBuffer.drawWithShader(modelView, projection, RenderSystem.getShader());
-
-        RenderSystem.setShaderColor(1F, 1F, 1F, 1F);
-        RenderSystem.disableBlend();
-        RenderSystem.enableCull();
-        RenderSystem.depthMask(true);
+    public void renderSky(Matrix4f modelView, Matrix4f projection, float partialTick,
+                          Camera camera, boolean isFoggy, Runnable skyFogSetup) {
+        this.skyRenderer.renderSky(modelView, projection, partialTick, camera, isFoggy, skyFogSetup);
     }
 }
