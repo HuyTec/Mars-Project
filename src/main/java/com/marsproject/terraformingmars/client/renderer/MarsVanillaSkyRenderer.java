@@ -19,7 +19,6 @@ import net.minecraft.client.renderer.GameRenderer;
 import net.minecraft.client.renderer.ShaderInstance;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.util.Mth;
-import net.minecraft.util.RandomSource;
 import net.minecraft.world.effect.MobEffects;
 import net.minecraft.world.entity.Entity;
 import net.minecraft.world.entity.LivingEntity;
@@ -31,47 +30,46 @@ import javax.annotation.Nullable;
 
 /**
  * Sky renderer cho dimension Mars.
- * Chỉ chịu trách nhiệm: sky dome (sáng/tối), sao, mặt trời, mặt trăng, end-sky fallback.
- * Không đụng tới chunk / entity / particle / weather rendering — đó là việc của LevelRenderer gốc,
- * không phải của class này.
+ * Chịu trách nhiệm: sky disc (sáng/tối), star dome (ảnh panorama xoay theo thời gian),
+ * mặt trời, mặt trăng, end-sky fallback.
+ * Không đụng tới chunk / entity / particle / weather rendering — đó là việc của LevelRenderer gốc.
  */
 public class MarsVanillaSkyRenderer {
 
-    private static final ResourceLocation SUN_LOCATION = new ResourceLocation("terraforming_mars","textures/environment/sun.png");
-    private static final ResourceLocation MOON_LOCATION = new ResourceLocation("terraforming_mars","textures/environment/moon_phases.png");
-    private static final ResourceLocation END_SKY_LOCATION = new ResourceLocation("terraforming_mars","textures/environment/end_sky.png");
+    private static final ResourceLocation SUN_LOCATION =
+            new ResourceLocation("terraforming_mars", "textures/environment/sun.png");
+    private static final ResourceLocation MOON_LOCATION =
+            new ResourceLocation("terraforming_mars", "textures/environment/moon_phases.png");
+    private static final ResourceLocation END_SKY_LOCATION =
+            new ResourceLocation("terraforming_mars", "textures/environment/end_sky.png");
+
+    // Ảnh panorama 360° (equirectangular) dùng làm "bầu trời sao" xoay theo thời gian.
+    private static final ResourceLocation STAR_DOME_LOCATION =
+            new ResourceLocation("terraforming_mars", "textures/environment/milkyway.png");
 
     private static final float SKY_DISC_RADIUS = 512.0F;
-    private static final float STAR_DISTANCE = 100.0F;
     private static final float SUN_HALF_SIZE = 30.0F;
     private static final float MOON_HALF_SIZE = 20.0F;
-    private static final int STAR_COUNT = 1500;
-    private static final long STAR_SEED = 10842L;
-    private static final ResourceLocation MILKY_WAY_LOCATION =
-            new ResourceLocation("terraforming_mars", "textures/environment/milkyway.png");
+
     private final Minecraft minecraft;
-    @Nullable
-    private VertexBuffer milkyWayBuffer;
+
     @Nullable
     private ClientLevel level;
     private int ticks;
 
     @Nullable
-    private VertexBuffer starBuffer;
-    @Nullable
     private VertexBuffer skyBuffer;
     @Nullable
     private VertexBuffer darkBuffer;
+    @Nullable
+    private VertexBuffer starDomeBuffer;
 
     public MarsVanillaSkyRenderer(Minecraft minecraft) {
         this.minecraft = minecraft;
-        this.createStars();
         this.createLightSky();
         this.createDarkSky();
-        this.createMilkyWay();
+        this.createStarDome();
     }
-
-
 
     /** Gọi khi client join/leave dimension Mars để renderer biết level hiện tại. */
     public void setLevel(@Nullable ClientLevel level) {
@@ -85,10 +83,6 @@ public class MarsVanillaSkyRenderer {
 
     /** Giải phóng GPU buffer, gọi khi renderer không còn dùng nữa. */
     public void close() {
-        if (this.starBuffer != null) {
-            this.starBuffer.close();
-            this.starBuffer = null;
-        }
         if (this.skyBuffer != null) {
             this.skyBuffer.close();
             this.skyBuffer = null;
@@ -97,181 +91,97 @@ public class MarsVanillaSkyRenderer {
             this.darkBuffer.close();
             this.darkBuffer = null;
         }
+        if (this.starDomeBuffer != null) {
+            this.starDomeBuffer.close();
+            this.starDomeBuffer = null;
+        }
     }
 
-    private Vec3 spherePoint(float r, float angle, float height) {
+    // ---------------------------------------------------------------------
+    // Sphere math
+    // ---------------------------------------------------------------------
 
-        float theta = angle;
-
-        float x = Mth.sin(theta) * r;
-        float z = Mth.cos(theta) * r;
-
-        float y = height * r;
-
-        return new Vec3(x,y,z);
+    private Vec3 spherePoint(float r, float theta, float phi) {
+        // theta: kinh độ (0 -> 2PI), phi: vĩ độ (-PI/2 -> PI/2)
+        float cosPhi = Mth.cos(phi);
+        float x = Mth.sin(theta) * cosPhi * r;
+        float z = Mth.cos(theta) * cosPhi * r;
+        float y = Mth.sin(phi) * r;
+        return new Vec3(x, y, z);
     }
 
-    private void createMilkyWay() {
+    // ---------------------------------------------------------------------
+    // Star dome (panorama 360°, xoay theo celestialPose cùng sun/moon)
+    // ---------------------------------------------------------------------
 
+    private void createStarDome() {
         Tesselator tesselator = Tesselator.getInstance();
         BufferBuilder builder = tesselator.getBuilder();
 
-        if (this.milkyWayBuffer != null) {
-            this.milkyWayBuffer.close();
+        if (this.starDomeBuffer != null) {
+            this.starDomeBuffer.close();
         }
+        this.starDomeBuffer = new VertexBuffer(VertexBuffer.Usage.STATIC);
 
-        this.milkyWayBuffer = new VertexBuffer(VertexBuffer.Usage.STATIC);
+        builder.begin(VertexFormat.Mode.QUADS, DefaultVertexFormat.POSITION_TEX);
 
+        final float radius = 300F;
+        final int lonSegments = 128;
+        final int latSegments = 64;
 
-        builder.begin(VertexFormat.Mode.QUADS,
-                DefaultVertexFormat.POSITION_TEX);
+        for (int lon = 0; lon < lonSegments; lon++) {
+            float theta0 = (float) (lon * Math.PI * 2 / lonSegments);
+            float theta1 = (float) ((lon + 1) * Math.PI * 2 / lonSegments);
 
+            float u0 = theta0 / ((float) Math.PI * 2F);
+            float u1 = theta1 / ((float) Math.PI * 2F);
 
-        float radius = 300.0F;     // bán kính bầu trời
-        int segments = 32;         // độ mượt
-        float band = 0.25F;        // độ rộng dải ngân hà
+            for (int lat = 0; lat < latSegments; lat++) {
+                float phi0 = (float) (-Math.PI / 2 + lat * Math.PI / latSegments);
+                float phi1 = (float) (-Math.PI / 2 + (lat + 1) * Math.PI / latSegments);
 
+                float v0 = (phi0 + (float) Math.PI / 2F) / (float) Math.PI;
+                float v1 = (phi1 + (float) Math.PI / 2F) / (float) Math.PI;
 
-        for (int i = 0; i < segments; i++) {
+                Vec3 p1 = spherePoint(radius, theta0, phi0);
+                Vec3 p2 = spherePoint(radius, theta1, phi0);
+                Vec3 p3 = spherePoint(radius, theta1, phi1);
+                Vec3 p4 = spherePoint(radius, theta0, phi1);
 
-
-            float a0 = -1.2F + (i / (float)segments) * 2.4F;
-            float a1 = -1.2F + ((i + 1) / (float)segments) * 2.4F;
-
-
-            // vĩ độ trên cầu
-            float y0 = band;
-            float y1 = -band;
-
-
-            Vec3 p1 = spherePoint(radius, a0, y0);
-            Vec3 p2 = spherePoint(radius, a1, y0);
-            Vec3 p3 = spherePoint(radius, a1, y1);
-            Vec3 p4 = spherePoint(radius, a0, y1);
-
-
-            float u0 = i / (float)segments;
-            float u1 = (i + 1) / (float)segments;
-
-
-            builder.vertex(
-                            (float)p1.x,
-                            (float)p1.y,
-                            (float)p1.z)
-                    .uv(u0,0)
-                    .endVertex();
-
-
-            builder.vertex(
-                            (float)p2.x,
-                            (float)p2.y,
-                            (float)p2.z)
-                    .uv(u1,0)
-                    .endVertex();
-
-
-            builder.vertex(
-                            (float)p3.x,
-                            (float)p3.y,
-                            (float)p3.z)
-                    .uv(u1,1)
-                    .endVertex();
-
-
-            builder.vertex(
-                            (float)p4.x,
-                            (float)p4.y,
-                            (float)p4.z)
-                    .uv(u0,1)
-                    .endVertex();
-        }
-
-
-        BufferBuilder.RenderedBuffer rendered = builder.end();
-
-        this.milkyWayBuffer.bind();
-        this.milkyWayBuffer.upload(rendered);
-        VertexBuffer.unbind();
-    }
-
-    private void drawMilkyWay(PoseStack poseStack, Matrix4f projectionMatrix, float brightness) {
-        if (this.milkyWayBuffer == null) return;
-
-        RenderSystem.setShader(GameRenderer::getPositionTexShader);
-        RenderSystem.setShaderTexture(0, MILKY_WAY_LOCATION);
-        RenderSystem.setShaderColor(brightness, brightness, brightness, brightness);
-        this.milkyWayBuffer.bind();
-        this.milkyWayBuffer.drawWithShader(poseStack.last().pose(), projectionMatrix, RenderSystem.getShader());
-        VertexBuffer.unbind();
-        // KHÔNG gọi enableBlend()/disableBlend() ở đây nữa — blend đã được bật từ trước (dòng RenderSystem.enableBlend() ở renderNormalSky) và sẽ được tắt ở cuối renderNormalSky
-    }
-
-    private void createStars() {
-        Tesselator tesselator = Tesselator.getInstance();
-        BufferBuilder bufferbuilder = tesselator.getBuilder();
-        RenderSystem.setShader(GameRenderer::getPositionShader);
-        if (this.starBuffer != null) {
-            this.starBuffer.close();
-        }
-
-        this.starBuffer = new VertexBuffer(VertexBuffer.Usage.STATIC);
-        BufferBuilder.RenderedBuffer renderedBuffer = this.drawStars(bufferbuilder);
-        this.starBuffer.bind();
-        this.starBuffer.upload(renderedBuffer);
-        VertexBuffer.unbind();
-    }
-
-    private BufferBuilder.RenderedBuffer drawStars(BufferBuilder builder) {
-        RandomSource random = RandomSource.create(STAR_SEED);
-        builder.begin(VertexFormat.Mode.QUADS, DefaultVertexFormat.POSITION);
-
-        for (int i = 0; i < STAR_COUNT; ++i) {
-            double x = (double) (random.nextFloat() * 2.0F - 1.0F);
-            double y = (double) (random.nextFloat() * 2.0F - 1.0F);
-            double z = (double) (random.nextFloat() * 2.0F - 1.0F);
-            double size = (double) (0.15F + random.nextFloat() * 0.1F);
-            double lenSq = x * x + y * y + z * z;
-
-            if (lenSq < 1.0D && lenSq > 0.01D) {
-                double invLen = 1.0D / Math.sqrt(lenSq);
-                x *= invLen;
-                y *= invLen;
-                z *= invLen;
-
-                double px = x * (double) STAR_DISTANCE;
-                double py = y * (double) STAR_DISTANCE;
-                double pz = z * (double) STAR_DISTANCE;
-
-                double yaw = Math.atan2(x, z);
-                double sinYaw = Math.sin(yaw);
-                double cosYaw = Math.cos(yaw);
-                double pitch = Math.atan2(Math.sqrt(x * x + z * z), y);
-                double sinPitch = Math.sin(pitch);
-                double cosPitch = Math.cos(pitch);
-                double spin = random.nextDouble() * Math.PI * 2.0D;
-                double sinSpin = Math.sin(spin);
-                double cosSpin = Math.cos(spin);
-
-                for (int corner = 0; corner < 4; ++corner) {
-                    double cx = (double) ((corner & 2) - 1) * size;
-                    double cy = (double) (((corner + 1) & 2) - 1) * size;
-
-                    double rx = cx * cosSpin - cy * sinSpin;
-                    double ry = cy * cosSpin + cx * sinSpin;
-
-                    double px1 = rx * sinPitch;
-                    double py1 = -rx * cosPitch;
-
-                    double fx = py1 * sinYaw - ry * cosYaw;
-                    double fy = ry * sinYaw + py1 * cosYaw;
-
-                    builder.vertex(px + fx, py + px1, pz + fy).endVertex();
-                }
+                // Winding đảo để đúng mặt khi camera đứng trong sphere (nhìn từ trong ra).
+                builder.vertex((float) p1.x, (float) p1.y, (float) p1.z).uv(u0, 1 - v0).endVertex();
+                builder.vertex((float) p4.x, (float) p4.y, (float) p4.z).uv(u0, 1 - v1).endVertex();
+                builder.vertex((float) p3.x, (float) p3.y, (float) p3.z).uv(u1, 1 - v1).endVertex();
+                builder.vertex((float) p2.x, (float) p2.y, (float) p2.z).uv(u1, 1 - v0).endVertex();
             }
         }
 
-        return builder.end();
+        BufferBuilder.RenderedBuffer rendered = builder.end();
+        this.starDomeBuffer.bind();
+        this.starDomeBuffer.upload(rendered);
+        VertexBuffer.unbind();
     }
+
+    /**
+     * Vẽ dome sao bằng celestialPose (cùng ma trận xoay với mặt trời/mặt trăng)
+     * để bầu trời sao "quay" theo thời gian trong ngày.
+     * Gọi bên trong khối đã enableBlend + disableCull.
+     */
+    private void renderStarDome(Matrix4f celestialPose, Matrix4f projectionMatrix, float brightness) {
+        if (this.starDomeBuffer == null) return;
+
+        RenderSystem.setShader(GameRenderer::getPositionTexShader);
+        RenderSystem.setShaderTexture(0, STAR_DOME_LOCATION);
+        RenderSystem.setShaderColor(brightness, brightness, brightness, brightness);
+
+        this.starDomeBuffer.bind();
+        this.starDomeBuffer.drawWithShader(celestialPose, projectionMatrix, RenderSystem.getShader());
+        VertexBuffer.unbind();
+    }
+
+    // ---------------------------------------------------------------------
+    // Sky disc (màu solid sáng/tối, giữ nguyên hành vi vanilla)
+    // ---------------------------------------------------------------------
 
     private void createLightSky() {
         Tesselator tesselator = Tesselator.getInstance();
@@ -310,12 +220,16 @@ public class MarsVanillaSkyRenderer {
         builder.vertex(0.0F, y, 0.0F).endVertex();
         for (int angle = -180; angle <= 180; angle += 45) {
             builder.vertex(
-                    radius * Mth.cos((float) angle * ((float)Math.PI / 180F)),
+                    radius * Mth.cos((float) angle * ((float) Math.PI / 180F)),
                     y,
-                    radius * Mth.sin((float) angle * ((float)Math.PI / 180F))
+                    radius * Mth.sin((float) angle * ((float) Math.PI / 180F))
             ).endVertex();
         }
     }
+
+    // ---------------------------------------------------------------------
+    // Misc helpers
+    // ---------------------------------------------------------------------
 
     private boolean doesMobEffectBlockSky(Camera camera) {
         Entity entity = camera.getEntity();
@@ -355,9 +269,14 @@ public class MarsVanillaSkyRenderer {
         RenderSystem.disableBlend();
     }
 
-    public void renderSky(Matrix4f frustumMatrix, Matrix4f projectionMatrix, float partialTick, Camera camera, boolean isFoggy, Runnable skyFogSetup) {
+    // ---------------------------------------------------------------------
+    // Main entry
+    // ---------------------------------------------------------------------
 
-        if (this.level == null || this.starBuffer == null || this.skyBuffer == null || this.darkBuffer == null) {
+    public void renderSky(Matrix4f frustumMatrix, Matrix4f projectionMatrix, float partialTick, Camera camera,
+                          boolean isFoggy, Runnable skyFogSetup) {
+
+        if (this.level == null || this.skyBuffer == null || this.darkBuffer == null) {
             return;
         }
 
@@ -393,6 +312,7 @@ public class MarsVanillaSkyRenderer {
         float b = (float) skyColor.z;
         FogRenderer.levelFogColor();
 
+        // --- Sky disc màu solid (nền) ---
         RenderSystem.depthMask(false);
         RenderSystem.setShaderColor(r, g, b, 1.0F);
         RenderSystem.setShader(GameRenderer::getPositionShader);
@@ -402,6 +322,8 @@ public class MarsVanillaSkyRenderer {
         VertexBuffer.unbind();
 
         RenderSystem.enableBlend();
+
+        // --- Sunrise/sunset glow ---
         float[] sunriseColor = this.level.effects().getSunriseColor(this.level.getTimeOfDay(partialTick), partialTick);
         if (sunriseColor != null) {
             this.renderSunriseGlow(poseStack, sunriseColor, partialTick);
@@ -409,12 +331,9 @@ public class MarsVanillaSkyRenderer {
 
         float rainFade = 1.0F - this.level.getRainLevel(partialTick);
 
-        float milkyWayBrightness = this.level.getStarBrightness(partialTick) * rainFade;
-        if (milkyWayBrightness > 0.0F) {
-            this.drawMilkyWay(poseStack, projectionMatrix, milkyWayBrightness * 0.5F);
-        }
-
-        RenderSystem.blendFuncSeparate(GlStateManager.SourceFactor.SRC_ALPHA, GlStateManager.DestFactor.ONE, GlStateManager.SourceFactor.ONE, GlStateManager.DestFactor.ZERO);
+        // --- Khối "celestial": sun, moon, star dome — cùng xoay theo thời gian ---
+        RenderSystem.blendFuncSeparate(GlStateManager.SourceFactor.SRC_ALPHA, GlStateManager.DestFactor.ONE,
+                GlStateManager.SourceFactor.ONE, GlStateManager.DestFactor.ZERO);
         poseStack.pushPose();
         RenderSystem.setShaderColor(1.0F, 1.0F, 1.0F, rainFade);
         poseStack.mulPose(Axis.YP.rotationDegrees(-90.0F));
@@ -427,11 +346,11 @@ public class MarsVanillaSkyRenderer {
 
         float starBrightness = this.level.getStarBrightness(partialTick) * rainFade;
         if (starBrightness > 0.0F) {
-            RenderSystem.setShaderColor(starBrightness, starBrightness, starBrightness, starBrightness);
             FogRenderer.setupNoFog();
-            this.starBuffer.bind();
-            this.starBuffer.drawWithShader(poseStack.last().pose(), projectionMatrix, GameRenderer.getPositionShader());
-            VertexBuffer.unbind();
+            RenderSystem.disableCull(); // camera đứng trong dome, cần thấy mặt trong
+            float boosted = Math.min(starBrightness * 1.8F, 1.0F); // tăng độ sáng, giới hạn tối đa 1.
+            this.renderStarDome(celestialPose, projectionMatrix, boosted);
+            RenderSystem.enableCull();
         }
 
         RenderSystem.setShaderColor(1.0F, 1.0F, 1.0F, 1.0F);
@@ -439,8 +358,10 @@ public class MarsVanillaSkyRenderer {
         RenderSystem.defaultBlendFunc();
         poseStack.popPose();
 
+        // --- Dark disc (khi mắt ở dưới đường chân trời) ---
         RenderSystem.setShaderColor(0.0F, 0.0F, 0.0F, 1.0F);
-        double eyeHeight = this.minecraft.player.getEyePosition(partialTick).y - this.level.getLevelData().getHorizonHeight(this.level);
+        double eyeHeight = this.minecraft.player.getEyePosition(partialTick).y
+                - this.level.getLevelData().getHorizonHeight(this.level);
         if (eyeHeight < 0.0D) {
             poseStack.pushPose();
             poseStack.translate(0.0F, 12.0F, 0.0F);
@@ -466,7 +387,8 @@ public class MarsVanillaSkyRenderer {
         Matrix4f matrix4f = poseStack.last().pose();
         BufferBuilder bufferbuilder = Tesselator.getInstance().getBuilder();
         bufferbuilder.begin(VertexFormat.Mode.TRIANGLE_FAN, DefaultVertexFormat.POSITION_COLOR);
-        bufferbuilder.vertex(matrix4f, 0.0F, 100.0F, 0.0F).color(sunriseColor[0], sunriseColor[1], sunriseColor[2], sunriseColor[3]).endVertex();
+        bufferbuilder.vertex(matrix4f, 0.0F, 100.0F, 0.0F)
+                .color(sunriseColor[0], sunriseColor[1], sunriseColor[2], sunriseColor[3]).endVertex();
 
         for (int j = 0; j <= 16; ++j) {
             float angle = (float) j * ((float) Math.PI * 2.0F) / 16.0F;

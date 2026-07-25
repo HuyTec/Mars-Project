@@ -60,10 +60,13 @@ public class MarsDimensionEffects extends DimensionSpecialEffects {
         float progress = getProgress01();
         Vec3 baseFog = FOG_BARREN.lerp(FOG_TERRAFORMED, progress);
 
+        // Hạ sàn từ 0.35 xuống gần 0 -> ban đêm (brightness thấp) fog gần như đen/trong suốt hòa vào bầu trời đêm
+        float factor = 0.05F + brightness * 0.95F;
+
         return new Vec3(
-                baseFog.x * (0.35D + brightness * 0.65D),
-                baseFog.y * (0.35D + brightness * 0.65D),
-                baseFog.z * (0.35D + brightness * 0.65D)
+                baseFog.x * factor,
+                baseFog.y * factor,
+                baseFog.z * factor
         );
     }
 
