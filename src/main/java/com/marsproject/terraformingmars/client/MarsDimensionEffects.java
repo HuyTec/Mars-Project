@@ -5,8 +5,12 @@ import net.minecraft.client.Camera;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.multiplayer.ClientLevel;
 import net.minecraft.client.renderer.DimensionSpecialEffects;
+import net.minecraft.client.renderer.LightTexture;
 import net.minecraft.util.Mth;
 import net.minecraft.world.phys.Vec3;
+import com.marsproject.terraformingmars.registry.ModParticles;
+import com.marsproject.terraformingmars.weather.MarsWeatherBiomes;
+import net.minecraft.core.BlockPos;
 import org.joml.Matrix4f;
 import org.jetbrains.annotations.Nullable;
 
@@ -86,5 +90,74 @@ public class MarsDimensionEffects extends DimensionSpecialEffects {
         marsSkyRenderer.renderSky(modelViewMatrix, projectionMatrix, partialTick, camera, isFoggy, setupFog);
 
         return true;
+    }
+
+    @Override
+    public boolean renderSnowAndRain(ClientLevel level, int ticks, float partialTick,
+                                     LightTexture lightTexture, double camX, double camY, double camZ) {
+        return true;
+    }
+
+    @Override
+    public boolean tickRain(ClientLevel level, int ticks, Camera camera) {
+        ClientMarsWeatherData.tick();
+        Vec3 cameraPosition = camera.getPosition();
+
+        if (ClientMarsWeatherData.isDryIceStorm()) {
+            if (MarsWeatherBiomes.isCryotic(level, BlockPos.containing(cameraPosition))) {
+                spawnDryIceParticles(level, cameraPosition, ClientMarsWeatherData.intensity());
+            }
+            return true;
+        }
+        if (!ClientMarsWeatherData.isDustStorm()) {
+            return true;
+        }
+
+        int intensity = ClientMarsWeatherData.intensity();
+        int particlesPerTick = switch (intensity) {
+            case 1 -> 3;
+            case 2 -> 7;
+            default -> 12;
+        };
+        double windSpeed = switch (intensity) {
+            case 1 -> 0.26D;
+            case 2 -> 0.38D;
+            default -> 0.52D;
+        };
+
+        for (int i = 0; i < particlesPerTick; i++) {
+            double x = cameraPosition.x + (level.random.nextDouble() - 0.5D) * 36.0D;
+            double y = cameraPosition.y + (level.random.nextDouble() - 0.5D) * 14.0D;
+            double z = cameraPosition.z + (level.random.nextDouble() - 0.5D) * 36.0D;
+            double velocityX = ClientMarsWeatherData.windX() * windSpeed
+                    + (level.random.nextDouble() - 0.5D) * 0.04D;
+            double velocityY = (level.random.nextDouble() - 0.5D) * 0.008D;
+            double velocityZ = ClientMarsWeatherData.windZ() * windSpeed
+                    + (level.random.nextDouble() - 0.5D) * 0.04D;
+
+            level.addParticle(ModParticles.MARS_DUST.get(), x, y, z,
+                    velocityX, velocityY, velocityZ);
+        }
+        return true;
+    }
+
+    private static void spawnDryIceParticles(ClientLevel level, Vec3 cameraPosition, int intensity) {
+        int particlesPerTick = switch (intensity) {
+            case 1 -> 4;
+            case 2 -> 8;
+            default -> 14;
+        };
+
+        for (int i = 0; i < particlesPerTick; i++) {
+            double x = cameraPosition.x + (level.random.nextDouble() - 0.5D) * 30.0D;
+            double y = cameraPosition.y + 7.0D + level.random.nextDouble() * 13.0D;
+            double z = cameraPosition.z + (level.random.nextDouble() - 0.5D) * 30.0D;
+            double velocityX = (level.random.nextDouble() - 0.5D) * 0.035D;
+            double velocityY = -0.10D - intensity * 0.035D;
+            double velocityZ = (level.random.nextDouble() - 0.5D) * 0.035D;
+
+            level.addParticle(ModParticles.DRY_ICE_CRYSTAL.get(), x, y, z,
+                    velocityX, velocityY, velocityZ);
+        }
     }
 }

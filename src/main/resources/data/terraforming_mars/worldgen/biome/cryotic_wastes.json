@@ -1,0 +1,50 @@
+{
+  "has_precipitation": false,
+  "temperature": -0.8,
+  "downfall": 0.0,
+  "temperature_modifier": "frozen",
+  "effects": {
+    "fog_color": 16777215,
+    "sky_color": 7776460,
+    "water_color": 4020182,
+    "water_fog_color": 2503744,
+    "mood_sound": {
+      "sound": "minecraft:ambient.cave",
+      "tick_delay": 6000,
+      "block_search_extent": 8,
+      "offset": 2.0
+    }
+  },
+  "carvers": {
+    "air": [
+      "minecraft:cave",
+      "minecraft:canyon"
+    ]
+  },
+  "features": [
+    [],
+    [],
+    [],
+    [],
+    [],
+    [],
+    [
+      "terraforming_mars:mars_rare_iron_ore",
+      "terraforming_mars:mars_iron_ore_placed"
+    ],
+    [],
+    [],
+    [],
+    []
+  ],
+  "spawners": {
+    "monster": [],
+    "creature": [],
+    "ambient": [],
+    "water_creature": [],
+    "underground_water_creature": [],
+    "water_ambient": [],
+    "misc": []
+  },
+  "spawn_costs": {}
+}

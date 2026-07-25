@@ -49,7 +49,7 @@ worldgen/
 
 ### Summary
 
-| Subdirectory            | File Count |
+| Subdirectory           | File Count |
 |------------------------|------------|
 | biome                  | 4          |
 | configured_feature     | 8          |

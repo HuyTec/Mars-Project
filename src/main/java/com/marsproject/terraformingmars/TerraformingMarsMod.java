@@ -1,17 +1,22 @@
 package com.marsproject.terraformingmars;
 
 import com.marsproject.terraformingmars.client.ClientMarsEnvironmentData;
+import com.marsproject.terraformingmars.client.ClientMarsWeatherData;
 import com.marsproject.terraformingmars.client.MarsEnvironmentHud;
+import com.marsproject.terraformingmars.client.particle.MarsDustParticle;
+import com.marsproject.terraformingmars.client.particle.DryIceParticle;
 import com.marsproject.terraformingmars.command.MarsCommands;
 import com.marsproject.terraformingmars.environment.MarsEnvironmentStageLoader;
 import com.marsproject.terraformingmars.item.MarsBeaconItem;
 import com.marsproject.terraformingmars.network.IntroFinishedPayload;
 import com.marsproject.terraformingmars.network.MarsEnvironmentSyncPayload;
+import com.marsproject.terraformingmars.network.MarsWeatherSyncPayload;
 import com.marsproject.terraformingmars.network.OpenIntroPayload;
 import com.marsproject.terraformingmars.registry.ModBlocks;
 import com.marsproject.terraformingmars.registry.ModCreativeTabs;
 import com.marsproject.terraformingmars.registry.ModEffects;
 import com.marsproject.terraformingmars.registry.ModItems;
+import com.marsproject.terraformingmars.registry.ModParticles;
 import com.marsproject.terraformingmars.screen.IntroScreen;
 import com.marsproject.terraformingmars.screen.TeleportHelper;
 import net.minecraft.client.KeyMapping;
@@ -19,6 +24,7 @@ import net.minecraft.resources.ResourceLocation;
 import net.neoforged.neoforge.client.event.ClientTickEvent;
 import net.neoforged.neoforge.client.event.RegisterGuiLayersEvent;
 import net.neoforged.neoforge.client.event.RegisterKeyMappingsEvent;
+import net.neoforged.neoforge.client.event.RegisterParticleProvidersEvent;
 import net.neoforged.neoforge.network.event.RegisterPayloadHandlersEvent;
 import net.neoforged.neoforge.network.registration.PayloadRegistrar;
 import org.lwjgl.glfw.GLFW;
@@ -81,6 +87,7 @@ public class TerraformingMarsMod {
         ModCreativeTabs.CREATIVE_MODE_TABS.register(modEventBus);
 
         ModEffects.EFFECTS.register(modEventBus);
+        ModParticles.PARTICLE_TYPES.register(modEventBus);
         
         // Register the Deferred Register to the mod event bus so items get registered
         ITEMS.register(modEventBus);
@@ -125,6 +132,12 @@ public class TerraformingMarsMod {
                 MarsEnvironmentSyncPayload.TYPE,
                 MarsEnvironmentSyncPayload.STREAM_CODEC,
                 (payload, context) -> context.enqueueWork(() -> ClientMarsEnvironmentData.update(payload))
+        );
+
+        registrar.playToClient(
+                MarsWeatherSyncPayload.TYPE,
+                MarsWeatherSyncPayload.STREAM_CODEC,
+                (payload, context) -> context.enqueueWork(() -> ClientMarsWeatherData.update(payload))
         );
     }
 
@@ -187,6 +200,12 @@ public class TerraformingMarsMod {
                     ),
                     new MarsEnvironmentHud()
             );
+        }
+
+        @SubscribeEvent
+        static void registerParticleProviders(RegisterParticleProvidersEvent event) {
+            event.registerSpriteSet(ModParticles.MARS_DUST.get(), MarsDustParticle.Provider::new);
+            event.registerSpriteSet(ModParticles.DRY_ICE_CRYSTAL.get(), DryIceParticle.Provider::new);
         }
     }
 

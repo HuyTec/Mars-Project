@@ -6,6 +6,7 @@
     "block.terraforming_mars.wind_crust":  "Wind Crust",
     "block.terraforming_mars.dirty_stone":  "Dirty Stone",
     "block.terraforming_mars.dust_layer":  "Dust Layer",
+    "block.terraforming_mars.dry_ice_layer": "Dry Ice Layer",
     "block.terraforming_mars.loose_regolith":  "Loose Regolith",
     "block.terraforming_mars.compacted_regolith":  "Compacted Regolith",
     "block.terraforming_mars.rocky_regolith":  "Rocky Regolith",

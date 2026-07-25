@@ -82,7 +82,7 @@ public class MarsEnvironmentHud implements LayeredDraw.Layer {
         drawPanel(guiGraphics, left, top, right, bottom);
 
         int line = y;
-        guiGraphics.drawString(font, Component.literal("MARS ENVIRONMENT"), x, line, TITLE_COLOR);
+        guiGraphics.drawString(font, Component.literal(environmentTitle(player)), x, line, TITLE_COLOR);
         line += titleBlock;
 
         int iconX = x;
@@ -107,6 +107,20 @@ public class MarsEnvironmentHud implements LayeredDraw.Layer {
 
         // Canh bao chi tiet - NAM NGOAI bang, ben PHAI
         drawWarnings(guiGraphics, font, right + 10, top, rows);
+    }
+
+    private static String environmentTitle(net.minecraft.world.entity.player.Player player) {
+        ResourceLocation dimension = player.level().dimension().location();
+        String dimensionName = switch (dimension.toString()) {
+            case "minecraft:overworld" -> "EARTH";
+            case "minecraft:the_nether" -> "NETHER";
+            case "minecraft:the_end" -> "THE END";
+            case "terraforming_mars:mars" -> "MARS";
+            default -> dimension.getPath()
+                    .replace('_', ' ')
+                    .toUpperCase(java.util.Locale.ROOT);
+        };
+        return dimensionName + " ENVIRONMENT";
     }
 
     private void drawWarnings(GuiGraphics g, Font font, int x, int y, List<StatRow> rows) {

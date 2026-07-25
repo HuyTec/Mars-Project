@@ -2,6 +2,7 @@ package com.marsproject.terraformingmars.registry;
 
 import com.marsproject.terraformingmars.TerraformingMarsMod;
 import com.marsproject.terraformingmars.block.MarsDustBlock;
+import com.marsproject.terraformingmars.block.DryIceLayerBlock;
 import net.minecraft.world.level.block.Block;
 import net.minecraft.world.level.block.SnowLayerBlock;
 import net.minecraft.world.level.block.SoundType;
@@ -40,6 +41,13 @@ public final class ModBlocks {
     /** Oxidised, dust-contaminated parent rock between regolith and intact basalt. */
     public static final DeferredBlock<Block> DIRTY_STONE = solid("dirty_stone", MapColor.COLOR_BROWN, 1.5F, SoundType.TUFF);
     public static final DeferredBlock<Block> DUST_LAYER = BLOCKS.register("dust_layer", () -> new SnowLayerBlock(BlockBehaviour.Properties.of().mapColor(MapColor.COLOR_ORANGE).strength(0.1F).sound(SoundType.SNOW).noOcclusion()));
+    public static final DeferredBlock<Block> DRY_ICE_LAYER = BLOCKS.register("dry_ice_layer",
+            () -> new DryIceLayerBlock(BlockBehaviour.Properties.of()
+                    .mapColor(MapColor.ICE)
+                    .strength(0.15F)
+                    .sound(SoundType.POWDER_SNOW)
+                    .noOcclusion()
+                    .randomTicks()));
     public static final DeferredBlock<Block> LOOSE_REGOLITH = falling("loose_regolith", MapColor.COLOR_ORANGE, SoundType.GRAVEL);
     public static final DeferredBlock<Block> COMPACTED_REGOLITH = solid("compacted_regolith", MapColor.COLOR_BROWN, 1.0F, SoundType.SOUL_SAND);
     public static final DeferredBlock<Block> ROCKY_REGOLITH = falling("rocky_regolith", MapColor.COLOR_BROWN, SoundType.GRAVEL);

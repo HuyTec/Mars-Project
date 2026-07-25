@@ -192,6 +192,34 @@
 
       {
         "type": "minecraft:condition",
+        "if_true": { "type": "minecraft:biome", "biome_is": ["terraforming_mars:cryotic_wastes"] },
+        "then_run": { "type": "minecraft:sequence", "sequence": [
+
+          { "type": "minecraft:condition",
+            "if_true": { "type": "minecraft:stone_depth", "offset": 0, "surface_type": "floor", "add_surface_depth": false, "secondary_depth_range": 0 },
+            "then_run": { "type": "minecraft:block", "result_state": { "Name": "terraforming_mars:frozen_dust" } }
+          },
+
+          { "type": "minecraft:condition",
+            "if_true": { "type": "minecraft:stone_depth", "offset": 1, "surface_type": "floor", "add_surface_depth": false, "secondary_depth_range": 0 },
+            "then_run": { "type": "minecraft:block", "result_state": { "Name": "terraforming_mars:permafrost" } }
+          },
+
+          { "type": "minecraft:condition",
+            "if_true": { "type": "minecraft:stone_depth", "offset": 3, "surface_type": "floor", "add_surface_depth": false, "secondary_depth_range": 1 },
+            "then_run": { "type": "minecraft:block", "result_state": { "Name": "terraforming_mars:ice_rich_regolith" } }
+          },
+
+          { "type": "minecraft:condition",
+            "if_true": { "type": "minecraft:y_above", "anchor": { "absolute": 0 }, "surface_depth_multiplier": 0, "add_stone_depth": false },
+            "then_run": { "type": "minecraft:block", "result_state": { "Name": "terraforming_mars:cryotic_rock" } },
+            "else_run": { "type": "minecraft:block", "result_state": { "Name": "minecraft:deepslate" } }
+          }
+
+        ] } },
+
+      {
+        "type": "minecraft:condition",
         "if_true": { "type": "minecraft:biome", "biome_is": ["terraforming_mars:dune_field"] },
         "then_run": { "type": "minecraft:sequence", "sequence": [
 

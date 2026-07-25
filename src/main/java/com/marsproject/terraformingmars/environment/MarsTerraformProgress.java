@@ -42,9 +42,10 @@ public class MarsTerraformProgress extends SavedData {
     }
 
     /** Lấy (hoặc tạo mới nếu chưa có) instance gắn với level Mars truyền vào. */
-    public static MarsTerraformProgress get(ServerLevel marsLevel) {
+    public static MarsTerraformProgress get(ServerLevel level) {
+        ServerLevel overworld = level.getServer().overworld();
         SavedData.Factory<MarsTerraformProgress> factory =
                 new SavedData.Factory<>(MarsTerraformProgress::create, MarsTerraformProgress::load, null);
-        return marsLevel.getDataStorage().computeIfAbsent(factory, DATA_NAME);
+        return overworld.getDataStorage().computeIfAbsent(factory, DATA_NAME);
     }
 }

@@ -26,6 +26,7 @@ public final class ModItems {
     public static final DeferredItem<BlockItem> WIND_CRUST_ITEM = blockItem("wind_crust", ModBlocks.WIND_CRUST);
     public static final DeferredItem<BlockItem> DIRTY_STONE_ITEM = blockItem("dirty_stone", ModBlocks.DIRTY_STONE);
     public static final DeferredItem<BlockItem> DUST_LAYER_ITEM = blockItem("dust_layer", ModBlocks.DUST_LAYER);
+    public static final DeferredItem<BlockItem> DRY_ICE_LAYER_ITEM = blockItem("dry_ice_layer", ModBlocks.DRY_ICE_LAYER);
     public static final DeferredItem<BlockItem> LOOSE_REGOLITH_ITEM = blockItem("loose_regolith", ModBlocks.LOOSE_REGOLITH);
     public static final DeferredItem<BlockItem> COMPACTED_REGOLITH_ITEM = blockItem("compacted_regolith", ModBlocks.COMPACTED_REGOLITH);
     public static final DeferredItem<BlockItem> ROCKY_REGOLITH_ITEM = blockItem("rocky_regolith", ModBlocks.ROCKY_REGOLITH);
