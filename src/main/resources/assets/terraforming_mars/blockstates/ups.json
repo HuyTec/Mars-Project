@@ -1,0 +1,12 @@
+{
+  "variants": {
+    "facing=north,powered=false": {"model": "terraforming_mars:block/ups"},
+    "facing=north,powered=true": {"model": "terraforming_mars:block/ups"},
+    "facing=south,powered=false": {"model": "terraforming_mars:block/ups", "y": 180},
+    "facing=south,powered=true": {"model": "terraforming_mars:block/ups", "y": 180},
+    "facing=west,powered=false": {"model": "terraforming_mars:block/ups", "y": 270},
+    "facing=west,powered=true": {"model": "terraforming_mars:block/ups", "y": 270},
+    "facing=east,powered=false": {"model": "terraforming_mars:block/ups", "y": 90},
+    "facing=east,powered=true": {"model": "terraforming_mars:block/ups", "y": 90}
+  }
+}

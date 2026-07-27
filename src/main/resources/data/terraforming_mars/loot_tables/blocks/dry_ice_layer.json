@@ -1,19 +1,14 @@
 {
   "type": "minecraft:block",
   "pools": [
-    {
-      "rolls": 1,
-      "entries": [
-        {
-          "type": "minecraft:item",
-          "name": "terraforming_mars:dry_ice_layer"
-        }
-      ],
-      "conditions": [
-        {
-          "condition": "minecraft:survives_explosion"
-        }
-      ]
-    }
-  ]
+    {"rolls":1,"conditions":[{"condition":"minecraft:block_state_property","block":"terraforming_mars:dry_ice_layer","properties":{"layers":"1"}}],"entries":[{"type":"minecraft:item","functions":[{"function":"minecraft:explosion_decay"}],"name":"terraforming_mars:dry_ice_chunk"}]},
+    {"rolls":1,"conditions":[{"condition":"minecraft:block_state_property","block":"terraforming_mars:dry_ice_layer","properties":{"layers":"2"}}],"entries":[{"type":"minecraft:item","functions":[{"function":"minecraft:set_count","count":2},{"function":"minecraft:explosion_decay"}],"name":"terraforming_mars:dry_ice_chunk"}]},
+    {"rolls":1,"conditions":[{"condition":"minecraft:block_state_property","block":"terraforming_mars:dry_ice_layer","properties":{"layers":"3"}}],"entries":[{"type":"minecraft:item","functions":[{"function":"minecraft:set_count","count":3},{"function":"minecraft:explosion_decay"}],"name":"terraforming_mars:dry_ice_chunk"}]},
+    {"rolls":1,"conditions":[{"condition":"minecraft:block_state_property","block":"terraforming_mars:dry_ice_layer","properties":{"layers":"4"}}],"entries":[{"type":"minecraft:item","functions":[{"function":"minecraft:set_count","count":4},{"function":"minecraft:explosion_decay"}],"name":"terraforming_mars:dry_ice_chunk"}]},
+    {"rolls":1,"conditions":[{"condition":"minecraft:block_state_property","block":"terraforming_mars:dry_ice_layer","properties":{"layers":"5"}}],"entries":[{"type":"minecraft:item","functions":[{"function":"minecraft:set_count","count":5},{"function":"minecraft:explosion_decay"}],"name":"terraforming_mars:dry_ice_chunk"}]},
+    {"rolls":1,"conditions":[{"condition":"minecraft:block_state_property","block":"terraforming_mars:dry_ice_layer","properties":{"layers":"6"}}],"entries":[{"type":"minecraft:item","functions":[{"function":"minecraft:set_count","count":6},{"function":"minecraft:explosion_decay"}],"name":"terraforming_mars:dry_ice_chunk"}]},
+    {"rolls":1,"conditions":[{"condition":"minecraft:block_state_property","block":"terraforming_mars:dry_ice_layer","properties":{"layers":"7"}}],"entries":[{"type":"minecraft:item","functions":[{"function":"minecraft:set_count","count":7},{"function":"minecraft:explosion_decay"}],"name":"terraforming_mars:dry_ice_chunk"}]},
+    {"rolls":1,"conditions":[{"condition":"minecraft:block_state_property","block":"terraforming_mars:dry_ice_layer","properties":{"layers":"8"}}],"entries":[{"type":"minecraft:item","functions":[{"function":"minecraft:set_count","count":8},{"function":"minecraft:explosion_decay"}],"name":"terraforming_mars:dry_ice_chunk"}]}
+  ],
+  "random_sequence": "terraforming_mars:blocks/dry_ice_layer"
 }

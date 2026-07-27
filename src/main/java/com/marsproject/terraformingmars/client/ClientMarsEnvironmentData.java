@@ -6,7 +6,6 @@ public class ClientMarsEnvironmentData {
     private static MarsEnvironmentSyncPayload latest = null;
 
     public static void update(MarsEnvironmentSyncPayload payload) {
-        System.out.println("CLIENT RECEIVED progress=" + payload.terraformProgress());
         latest = payload;
     }
 

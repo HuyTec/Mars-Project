@@ -1,0 +1,21 @@
+{
+  "parent": "minecraft:block/block",
+  "textures": {
+    "cable": "terraforming_mars:block/cable",
+    "particle": "terraforming_mars:block/cable"
+  },
+  "elements": [
+    {
+      "from": [5, 5, 14],
+      "to": [11, 11, 16],
+      "faces": {
+        "north": {"uv": [5, 5, 11, 11], "texture": "#cable"},
+        "south": {"uv": [5, 5, 11, 11], "texture": "#cable"},
+        "east": {"uv": [14, 5, 16, 11], "texture": "#cable"},
+        "west": {"uv": [0, 5, 2, 11], "texture": "#cable"},
+        "up": {"uv": [5, 14, 11, 16], "texture": "#cable"},
+        "down": {"uv": [5, 0, 11, 2], "texture": "#cable"}
+      }
+    }
+  ]
+}

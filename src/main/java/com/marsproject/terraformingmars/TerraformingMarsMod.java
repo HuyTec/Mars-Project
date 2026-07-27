@@ -13,9 +13,12 @@ import com.marsproject.terraformingmars.network.MarsEnvironmentSyncPayload;
 import com.marsproject.terraformingmars.network.MarsWeatherSyncPayload;
 import com.marsproject.terraformingmars.network.OpenIntroPayload;
 import com.marsproject.terraformingmars.registry.ModBlocks;
+import com.marsproject.terraformingmars.registry.ModBlockEntities;
 import com.marsproject.terraformingmars.registry.ModCreativeTabs;
 import com.marsproject.terraformingmars.registry.ModEffects;
 import com.marsproject.terraformingmars.registry.ModItems;
+import com.marsproject.terraformingmars.registry.ModMenuTypes;
+import com.marsproject.terraformingmars.registry.ModRecipeTypes;
 import com.marsproject.terraformingmars.registry.ModParticles;
 import com.marsproject.terraformingmars.screen.IntroScreen;
 import com.marsproject.terraformingmars.screen.TeleportHelper;
@@ -25,6 +28,7 @@ import net.neoforged.neoforge.client.event.ClientTickEvent;
 import net.neoforged.neoforge.client.event.RegisterGuiLayersEvent;
 import net.neoforged.neoforge.client.event.RegisterKeyMappingsEvent;
 import net.neoforged.neoforge.client.event.RegisterParticleProvidersEvent;
+import net.neoforged.neoforge.client.event.EntityRenderersEvent;
 import net.neoforged.neoforge.network.event.RegisterPayloadHandlersEvent;
 import net.neoforged.neoforge.network.registration.PayloadRegistrar;
 import org.lwjgl.glfw.GLFW;
@@ -83,6 +87,10 @@ public class TerraformingMarsMod {
         ModItems.register();
 
         ModBlocks.BLOCKS.register(modEventBus);
+        ModBlockEntities.BLOCK_ENTITY_TYPES.register(modEventBus);
+        ModMenuTypes.MENU_TYPES.register(modEventBus);
+        ModRecipeTypes.SERIALIZERS.register(modEventBus);
+        ModRecipeTypes.TYPES.register(modEventBus);
         ModItems.ITEMS.register(modEventBus);
         ModCreativeTabs.CREATIVE_MODE_TABS.register(modEventBus);
 
@@ -206,6 +214,37 @@ public class TerraformingMarsMod {
         static void registerParticleProviders(RegisterParticleProvidersEvent event) {
             event.registerSpriteSet(ModParticles.MARS_DUST.get(), MarsDustParticle.Provider::new);
             event.registerSpriteSet(ModParticles.DRY_ICE_CRYSTAL.get(), DryIceParticle.Provider::new);
+        }
+
+        @SubscribeEvent
+        static void registerBlockEntityRenderers(EntityRenderersEvent.RegisterRenderers event) {
+            event.registerBlockEntityRenderer(
+                    ModBlockEntities.SOLAR_ARRAY.get(),
+                    com.marsproject.terraformingmars.client.renderer.SolarArrayRenderer::new
+            );
+            event.registerBlockEntityRenderer(
+                    ModBlockEntities.POWER_CABLE.get(),
+                    com.marsproject.terraformingmars.client.renderer.CableRenderer::new
+            );
+            event.registerBlockEntityRenderer(
+                    ModBlockEntities.AIR_PIPE.get(),
+                    com.marsproject.terraformingmars.client.renderer.PipeRenderer::new
+            );
+            event.registerBlockEntityRenderer(
+                    ModBlockEntities.MACHINE.get(),
+                    com.marsproject.terraformingmars.client.renderer.MachineRenderer::new
+            );
+            event.registerBlockEntityRenderer(
+                    ModBlockEntities.UPS.get(),
+                    com.marsproject.terraformingmars.client.renderer.UpsRenderer::new
+            );
+        }
+
+        @SubscribeEvent
+        static void registerMenuScreens(
+                net.neoforged.neoforge.client.event.RegisterMenuScreensEvent event) {
+            event.register(ModMenuTypes.MACHINE.get(),
+                    com.marsproject.terraformingmars.client.screen.MachineScreen::new);
         }
     }
 

@@ -20,7 +20,10 @@ public final class ModCreativeTabs {
                     .icon(() -> new ItemStack(ModBlocks.IRONSTONE.get()))
                     .displayItems((parameters, output) -> {
                         // Tự động thêm TẤT CẢ block đã đăng ký trong ModBlocks
-                        ModBlocks.BLOCKS.getEntries().forEach(entry -> output.accept(entry.get()));
+                        ModBlocks.BLOCKS.getEntries().stream()
+                                .filter(entry -> entry != ModBlocks.MULTIBLOCK_PART)
+                                .forEach(entry -> output.accept(entry.get()));
+                        ModItems.RAW_MATERIAL_ITEMS.forEach(entry -> output.accept(entry.get()));
                     })
                     .build());
 

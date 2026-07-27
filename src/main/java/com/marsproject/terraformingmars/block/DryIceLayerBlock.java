@@ -6,10 +6,9 @@ import net.minecraft.core.BlockPos;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.util.RandomSource;
 import net.minecraft.world.level.block.Block;
-import net.minecraft.world.level.block.SnowLayerBlock;
 import net.minecraft.world.level.block.state.BlockState;
 
-public final class DryIceLayerBlock extends SnowLayerBlock {
+public final class DryIceLayerBlock extends SevenLayerBlock {
     private static final double SUBLIMATION_TEMPERATURE_CELSIUS = -45.0;
 
     public DryIceLayerBlock(Properties properties) {

@@ -1,0 +1,5 @@
+{
+  "variants": {
+    "": { "model": "terraforming_mars:block/air_pipe" }
+  }
+}

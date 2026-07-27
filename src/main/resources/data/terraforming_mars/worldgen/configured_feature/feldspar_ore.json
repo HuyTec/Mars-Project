@@ -1,11 +1,15 @@
 {
   "type": "minecraft:ore",
   "config": {
-    "size": 5,
+    "size": 6,
     "discard_chance_on_air_exposure": 0.6,
     "targets": [
       {
         "target": { "predicate_type": "minecraft:block_match", "block": "terraforming_mars:dirty_stone" },
+        "state": { "Name": "terraforming_mars:feldspar_vein" }
+      },
+      {
+        "target": { "predicate_type": "minecraft:tag_match", "tag": "minecraft:stone_ore_replaceables" },
         "state": { "Name": "terraforming_mars:feldspar_vein" }
       }
     ]

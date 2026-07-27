@@ -5,6 +5,7 @@ import com.marsproject.terraformingmars.screen.TeleportHelper;
 import com.marsproject.terraformingmars.registry.ModBlocks;
 import com.marsproject.terraformingmars.weather.MarsWeatherData;
 import com.marsproject.terraformingmars.weather.MarsWeatherBiomes;
+import com.marsproject.terraformingmars.block.SevenLayerBlock;
 import net.minecraft.core.BlockPos;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.server.level.ServerPlayer;
@@ -81,7 +82,16 @@ public final class MarsWeatherHandler {
                 BlockState existingLayer = level.getBlockState(existingLayerPos);
                 if (existingLayer.is(layerBlock)) {
                     int layers = existingLayer.getValue(SnowLayerBlock.LAYERS);
-                    if (layers < SnowLayerBlock.MAX_HEIGHT) {
+                    if (layers > SevenLayerBlock.MAX_LAYERS) {
+                        // Repair layer-8 states left in worlds created before
+                        // the seven-layer cap was introduced.
+                        level.setBlock(existingLayerPos,
+                                existingLayer.setValue(
+                                        SnowLayerBlock.LAYERS,
+                                        SevenLayerBlock.MAX_LAYERS
+                                ),
+                                Block.UPDATE_ALL);
+                    } else if (layers < SevenLayerBlock.MAX_LAYERS) {
                         level.setBlock(existingLayerPos,
                                 existingLayer.setValue(SnowLayerBlock.LAYERS, layers + 1),
                                 Block.UPDATE_ALL);

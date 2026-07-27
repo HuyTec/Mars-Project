@@ -6,212 +6,167 @@ import net.minecraft.client.gui.GuiGraphics;
 import net.minecraft.client.gui.LayeredDraw;
 import net.minecraft.core.BlockPos;
 import net.minecraft.network.chat.Component;
-import net.minecraft.resources.ResourceLocation;
 
-import java.util.ArrayList;
-import java.util.List;
-
+/** Single environment HUD renderer. Dimension-specific behavior lives in {@link EnvironmentHudResolver}. */
 public class MarsEnvironmentHud implements LayeredDraw.Layer {
-
-    public static boolean visible = true; // bat/tat bang phim X (ModKeyMappings)
-
-    private static final String MODID = "terraforming_mars";
-    private static ResourceLocation icon(String name) {
-        return new ResourceLocation(MODID, "textures/gui/hud/icon_" + name + ".png");
-    }
-
-    private static final ResourceLocation ICON_RADIATION = icon("radiation");
-    private static final ResourceLocation ICON_PRESSURE = icon("pressure");
-    private static final ResourceLocation ICON_OXYGEN = icon("oxygen");
-    private static final ResourceLocation ICON_TEMPERATURE = icon("temperature");
-    private static final ResourceLocation ICON_WATER = icon("water");
-    private static final ResourceLocation ICON_BIOLOGY = icon("biology");
+    public static boolean visible = true;
 
     private static final int ICON_SIZE = 16;
+    private static final int MIN_PANEL_WIDTH = 190;
+    private static final int PANEL_PADDING = 6;
+    private static final int TEXT_GAP = 6;
 
     private static final int BG_COLOR = 0x88001018;
     private static final int BORDER_COLOR = 0xFF33CCFF;
     private static final int TITLE_COLOR = 0xFF66FFFF;
     private static final int LABEL_COLOR = 0xFF66CCFF;
     private static final int VALUE_COLOR = 0xFFFFFFFF;
-
     private static final int COLOR_SAFE = 0xFF55FF55;
     private static final int COLOR_WARN = 0xFFFFAA33;
     private static final int COLOR_CRITICAL = 0xFFFF5555;
-
-    private enum Severity { SAFE, WARNING, CRITICAL }
+    private static final int COLOR_ERROR = 0xFFCC66FF;
 
     @Override
     public void render(GuiGraphics guiGraphics, float partialTick) {
-        if (!visible) return; // <-- dong bi thieu trong ban truoc, phim X gio moi thuc su co tac dung
+        if (!visible) return;
 
-        var data = ClientMarsEnvironmentData.get();
-        if (data == null) return;
-
-        var player = Minecraft.getInstance().player;
+        Minecraft minecraft = Minecraft.getInstance();
+        var player = minecraft.player;
         if (player == null) return;
 
-        Font font = Minecraft.getInstance().font;
-        int lineHeight = font.lineHeight + 3;
-        int rowHeight = Math.max(lineHeight, ICON_SIZE + 2);
-
-        // NOTE: nguong (min/max) la GIA DINH TAM - can ban tu chinh theo
-        // logic that cua canLive()/MarsEnvironmentStage.
-        List<StatRow> rows = List.of(
-                radiationRow(data.radiation()),
-                pressureRow(data.atmospherePressurePercent()),
-                oxygenRow(data.oxygenPercent()),
-                temperatureRow(data.temperatureCelsius()),
-                waterRow(data.waterPercent()),
-                biologyRow(data.biologyPercent())
+        EnvironmentHudViewModel model = EnvironmentHudResolver.resolve(
+                player.level().dimension(),
+                ClientMarsEnvironmentData.get()
         );
 
+        Font font = minecraft.font;
+        int lineHeight = font.lineHeight + 3;
+        int rowHeight = Math.max(lineHeight, ICON_SIZE + 2);
+        int titleBlock = lineHeight + 2;
+        int footerBlock = lineHeight + 10;
         int x = 10;
         int y = 10;
-        int panelWidth = 190;
-        int titleBlock = lineHeight + 2;
-        int footerBlock = lineHeight + 10; // dong STATUS tong quat
 
-        int panelHeight = titleBlock + rows.size() * rowHeight + footerBlock + 12;
-
-        int left = x - 6;
-        int top = y - 6;
+        Component position = positionText(player.blockPosition());
+        int panelWidth = calculatePanelWidth(font, model, position);
+        int panelHeight = titleBlock + model.rows().size() * rowHeight + footerBlock + 12;
+        int left = x - PANEL_PADDING;
+        int top = y - PANEL_PADDING;
         int right = left + panelWidth;
         int bottom = top + panelHeight;
 
         drawPanel(guiGraphics, left, top, right, bottom);
 
         int line = y;
-        guiGraphics.drawString(font, Component.literal(environmentTitle(player)), x, line, TITLE_COLOR);
+        guiGraphics.drawString(font, model.title(), x, line, titleColor(model));
         line += titleBlock;
 
-        int iconX = x;
         int textX = x + ICON_SIZE + 4;
-
-        for (StatRow row : rows) {
-            guiGraphics.blit(row.icon(), iconX, line, 0, 0, ICON_SIZE, ICON_SIZE, ICON_SIZE, ICON_SIZE);
+        for (EnvironmentHudViewModel.StatRow row : model.rows()) {
+            guiGraphics.blit(row.icon(), x, line, 0, 0, ICON_SIZE, ICON_SIZE, ICON_SIZE, ICON_SIZE);
             drawEntry(guiGraphics, font, textX, line + (ICON_SIZE - font.lineHeight) / 2,
-                    row.label(), String.format("%.1f %s", row.rawValue(), row.unit()));
+                    row.label(), row.value());
             line += rowHeight;
         }
 
-        BlockPos pos = player.blockPosition();
-        drawEntry(guiGraphics, font, x, line, "Position",
-                pos.getX() + "  " + pos.getY() + "  " + pos.getZ());
+        guiGraphics.drawString(font, position, x, line, VALUE_COLOR);
         line += lineHeight + 2;
+        guiGraphics.drawString(font, model.status(), x, line, color(model.statusSeverity()));
 
-        boolean canLive = data.canLive();
-        int statusColor = canLive ? COLOR_SAFE : COLOR_CRITICAL;
-        guiGraphics.drawString(font, Component.literal(
-                canLive ? "STATUS : STABLE" : "STATUS : ENVIRONMENT UNSAFE"), x, line, statusColor);
-
-        // Canh bao chi tiet - NAM NGOAI bang, ben PHAI
-        drawWarnings(guiGraphics, font, right + 10, top, rows);
+        drawWarnings(guiGraphics, font, right + 10, top, model);
     }
 
-    private static String environmentTitle(net.minecraft.world.entity.player.Player player) {
-        ResourceLocation dimension = player.level().dimension().location();
-        String dimensionName = switch (dimension.toString()) {
-            case "minecraft:overworld" -> "EARTH";
-            case "minecraft:the_nether" -> "NETHER";
-            case "minecraft:the_end" -> "THE END";
-            case "terraforming_mars:mars" -> "MARS";
-            default -> dimension.getPath()
-                    .replace('_', ' ')
-                    .toUpperCase(java.util.Locale.ROOT);
-        };
-        return dimensionName + " ENVIRONMENT";
-    }
-
-    private void drawWarnings(GuiGraphics g, Font font, int x, int y, List<StatRow> rows) {
-        List<StatRow> warnings = new ArrayList<>();
-        for (StatRow row : rows) {
-            if (row.severity() != Severity.SAFE) warnings.add(row);
+    private static int calculatePanelWidth(
+            Font font,
+            EnvironmentHudViewModel model,
+            Component position
+    ) {
+        int contentWidth = Math.max(font.width(model.title()), font.width(model.status()));
+        contentWidth = Math.max(contentWidth, font.width(position));
+        for (EnvironmentHudViewModel.StatRow row : model.rows()) {
+            int rowWidth = ICON_SIZE + 4 + font.width(row.label()) + font.width(" : ")
+                    + font.width(row.value());
+            contentWidth = Math.max(contentWidth, rowWidth);
         }
-        if (warnings.isEmpty()) return;
+        return Math.max(MIN_PANEL_WIDTH, contentWidth + PANEL_PADDING * 2 + TEXT_GAP);
+    }
+
+    private static Component positionText(BlockPos pos) {
+        return Component.translatable(
+                "hud.terraforming_mars.position",
+                pos.getX(),
+                pos.getY(),
+                pos.getZ()
+        );
+    }
+
+    private static void drawWarnings(
+            GuiGraphics graphics,
+            Font font,
+            int x,
+            int y,
+            EnvironmentHudViewModel model
+    ) {
+        if (model.warnings().isEmpty()) return;
 
         int lineHeight = font.lineHeight + 3;
         int line = y;
-
-        g.drawString(font, Component.literal("! WARNING"), x, line, COLOR_CRITICAL);
+        graphics.drawString(
+                font,
+                Component.translatable("hud.terraforming_mars.warning.header"),
+                x,
+                line,
+                color(model.profile() == EnvironmentHudProfile.END_ERROR
+                        ? EnvironmentHudViewModel.Severity.ERROR
+                        : EnvironmentHudViewModel.Severity.CRITICAL)
+        );
         line += lineHeight + 1;
 
-        for (StatRow row : warnings) {
-            int color = row.severity() == Severity.CRITICAL ? COLOR_CRITICAL : COLOR_WARN;
-            String text = row.label().toUpperCase() + ": " + row.statusText();
-            g.drawString(font, Component.literal(text), x, line, color);
+        for (EnvironmentHudViewModel.Warning warning : model.warnings()) {
+            graphics.drawString(font, warning.text(), x, line, color(warning.severity()));
             line += lineHeight;
         }
     }
 
-    private void drawEntry(GuiGraphics g, Font font, int x, int y, String label, String value) {
-        g.drawString(font, Component.literal(label + " : "), x, y, LABEL_COLOR);
-        int offset = font.width(label + " : ");
-        g.drawString(font, Component.literal(value), x + offset, y, VALUE_COLOR);
+    private static void drawEntry(
+            GuiGraphics graphics,
+            Font font,
+            int x,
+            int y,
+            Component label,
+            Component value
+    ) {
+        Component prefix = Component.translatable("hud.terraforming_mars.entry", label);
+        graphics.drawString(font, prefix, x, y, LABEL_COLOR);
+        graphics.drawString(font, value, x + font.width(prefix), y, VALUE_COLOR);
     }
 
-    private void drawPanel(GuiGraphics g, int left, int top, int right, int bottom) {
-        g.fill(left, top, right, bottom, BG_COLOR);
-
-        g.fill(left, top, right, top + 1, BORDER_COLOR);
-        g.fill(left, bottom - 1, right, bottom, BORDER_COLOR);
-        g.fill(left, top, left + 1, bottom, BORDER_COLOR);
-        g.fill(right - 1, top, right, bottom, BORDER_COLOR);
-
-        // Goc cong nghe
-        g.fill(left, top, left + 12, top + 2, BORDER_COLOR);
-        g.fill(left, top, left + 2, top + 12, BORDER_COLOR);
-        g.fill(right - 12, top, right, top + 2, BORDER_COLOR);
-        g.fill(right - 2, top, right, top + 12, BORDER_COLOR);
-        g.fill(left, bottom - 2, left + 12, bottom, BORDER_COLOR);
-        g.fill(left, bottom - 12, left + 2, bottom, BORDER_COLOR);
-        g.fill(right - 12, bottom - 2, right, bottom, BORDER_COLOR);
-        g.fill(right - 2, bottom - 12, right, bottom, BORDER_COLOR);
+    private static int titleColor(EnvironmentHudViewModel model) {
+        return model.profile() == EnvironmentHudProfile.END_ERROR ? COLOR_ERROR : TITLE_COLOR;
     }
 
-    // ---- Cac ham xac dinh trang thai + muc do nghiem trong tung chi so ----
-    // NOTE: nguong la GIA DINH TAM, can chinh theo thiet ke that cua ban.
-
-    private static StatRow radiationRow(double v) {
-        if (v < 5) return new StatRow(ICON_RADIATION, "Radiation", v, "mSv/h", "LOW", Severity.SAFE);
-        if (v < 10) return new StatRow(ICON_RADIATION, "Radiation", v, "mSv/h", "ELEVATED", Severity.WARNING);
-        if (v < 15) return new StatRow(ICON_RADIATION, "Radiation", v, "mSv/h", "HIGH", Severity.WARNING);
-        return new StatRow(ICON_RADIATION, "Radiation", v, "mSv/h", "CRITICAL", Severity.CRITICAL);
+    private static int color(EnvironmentHudViewModel.Severity severity) {
+        return switch (severity) {
+            case SAFE -> COLOR_SAFE;
+            case WARNING -> COLOR_WARN;
+            case CRITICAL -> COLOR_CRITICAL;
+            case ERROR -> COLOR_ERROR;
+        };
     }
 
-    private static StatRow pressureRow(double v) {
-        if (v < 15) return new StatRow(ICON_PRESSURE, "Pressure", v, "%", "CRITICAL", Severity.CRITICAL);
-        if (v < 30) return new StatRow(ICON_PRESSURE, "Pressure", v, "%", "LOW", Severity.WARNING);
-        if (v <= 70) return new StatRow(ICON_PRESSURE, "Pressure", v, "%", "NORMAL", Severity.SAFE);
-        return new StatRow(ICON_PRESSURE, "Pressure", v, "%", "HIGH", Severity.WARNING);
+    private static void drawPanel(GuiGraphics graphics, int left, int top, int right, int bottom) {
+        graphics.fill(left, top, right, bottom, BG_COLOR);
+        graphics.fill(left, top, right, top + 1, BORDER_COLOR);
+        graphics.fill(left, bottom - 1, right, bottom, BORDER_COLOR);
+        graphics.fill(left, top, left + 1, bottom, BORDER_COLOR);
+        graphics.fill(right - 1, top, right, bottom, BORDER_COLOR);
+        graphics.fill(left, top, left + 12, top + 2, BORDER_COLOR);
+        graphics.fill(left, top, left + 2, top + 12, BORDER_COLOR);
+        graphics.fill(right - 12, top, right, top + 2, BORDER_COLOR);
+        graphics.fill(right - 2, top, right, top + 12, BORDER_COLOR);
+        graphics.fill(left, bottom - 2, left + 12, bottom, BORDER_COLOR);
+        graphics.fill(left, bottom - 12, left + 2, bottom, BORDER_COLOR);
+        graphics.fill(right - 12, bottom - 2, right, bottom, BORDER_COLOR);
+        graphics.fill(right - 2, bottom - 12, right, bottom, BORDER_COLOR);
     }
-
-    private static StatRow oxygenRow(double v) {
-        if (v < 8) return new StatRow(ICON_OXYGEN, "Oxygen", v, "%", "CRITICAL", Severity.CRITICAL);
-        if (v < 16) return new StatRow(ICON_OXYGEN, "Oxygen", v, "%", "LOW", Severity.WARNING);
-        if (v <= 25) return new StatRow(ICON_OXYGEN, "Oxygen", v, "%", "NORMAL", Severity.SAFE);
-        return new StatRow(ICON_OXYGEN, "Oxygen", v, "%", "HIGH", Severity.SAFE);
-    }
-
-    private static StatRow temperatureRow(double v) {
-        if (v < -20) return new StatRow(ICON_TEMPERATURE, "Temperature", v, "\u00b0C", "FREEZING", Severity.CRITICAL);
-        if (v < 0) return new StatRow(ICON_TEMPERATURE, "Temperature", v, "\u00b0C", "COLD", Severity.WARNING);
-        if (v <= 15) return new StatRow(ICON_TEMPERATURE, "Temperature", v, "\u00b0C", "NORMAL", Severity.SAFE);
-        return new StatRow(ICON_TEMPERATURE, "Temperature", v, "\u00b0C", "HOT", Severity.WARNING);
-    }
-
-    // Water/Biology la chi so TIEN DO terraform, khong phai nguy hiem sinh ton
-    // -> luon SAFE, khong bao gio bi liet vao danh sach WARNING ben phai.
-    private static StatRow waterRow(double v) {
-        String status = v < 5 ? "NONE" : v < 10 ? "TRACE" : v < 50 ? "PRESENT" : "ABUNDANT";
-        return new StatRow(ICON_WATER, "Water", v, "%", status, Severity.SAFE);
-    }
-
-    private static StatRow biologyRow(double v) {
-        String status = v < 5 ? "NONE" : v < 15 ? "EMERGING" : v < 40 ? "ESTABLISHED" : "THRIVING";
-        return new StatRow(ICON_BIOLOGY, "Biology", v, "%", status, Severity.SAFE);
-    }
-
-    private record StatRow(ResourceLocation icon, String label, double rawValue, String unit,
-                           String statusText, Severity severity) {}
 }

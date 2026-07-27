@@ -1,7 +1,9 @@
 package com.marsproject.terraformingmars.registry;
 
 import com.marsproject.terraformingmars.TerraformingMarsMod;
+import com.marsproject.terraformingmars.item.HabitatKitItem;
 import net.minecraft.world.item.BlockItem;
+import net.minecraft.world.item.Item;
 import net.neoforged.neoforge.registries.DeferredBlock;
 import net.neoforged.neoforge.registries.DeferredItem;
 import net.neoforged.neoforge.registries.DeferredRegister;
@@ -13,10 +15,17 @@ import java.util.List;
 public final class ModItems {
     public static final DeferredRegister.Items ITEMS = DeferredRegister.createItems(TerraformingMarsMod.MODID);
     public static final List<DeferredItem<BlockItem>> GEOLOGY_ITEMS = new ArrayList<>();
+    public static final List<DeferredItem<Item>> RAW_MATERIAL_ITEMS = new ArrayList<>();
 
     private static DeferredItem<BlockItem> blockItem(String name, DeferredBlock<?> block) {
         DeferredItem<BlockItem> item = ITEMS.registerSimpleBlockItem(name, block);
         GEOLOGY_ITEMS.add(item);
+        return item;
+    }
+
+    private static DeferredItem<Item> rawMaterial(String name) {
+        DeferredItem<Item> item = ITEMS.registerSimpleItem(name);
+        RAW_MATERIAL_ITEMS.add(item);
         return item;
     }
 
@@ -84,6 +93,29 @@ public final class ModItems {
     public static final DeferredItem<BlockItem> IRON_BOULDER_ITEM = blockItem("iron_boulder", ModBlocks.IRON_BOULDER);
     public static final DeferredItem<BlockItem> CRYOTIC_BOULDER_ITEM = blockItem("cryotic_boulder", ModBlocks.CRYOTIC_BOULDER);
     public static final DeferredItem<BlockItem> SULFATE_BOULDER_ITEM = blockItem("sulfate_boulder", ModBlocks.SULFATE_BOULDER);
+
+    public static final DeferredItem<Item> APATITE_RAW = rawMaterial("apatite_raw");
+    public static final DeferredItem<Item> FELDSPAR_RAW = rawMaterial("feldspar_raw");
+    public static final DeferredItem<Item> SALT_POWDER = rawMaterial("salt_powder");
+    public static final DeferredItem<Item> SULFATE_POWDER = rawMaterial("sulfate_powder");
+    public static final DeferredItem<Item> MARS_DUST = rawMaterial("mars_dust");
+    public static final DeferredItem<Item> DRY_ICE_CHUNK = rawMaterial("dry_ice_chunk");
+    public static final DeferredItem<Item> CO2_CANISTER = rawMaterial("co2_canister");
+    public static final DeferredItem<Item> O2_CANISTER = rawMaterial("o2_canister");
+    public static final DeferredItem<BlockItem> SOLAR_ARRAY_ITEM = blockItem("solar_array", ModBlocks.SOLAR_ARRAY);
+    public static final DeferredItem<BlockItem> ADVANCED_SOLAR_ARRAY_ITEM =
+            blockItem("advanced_solar_array", ModBlocks.ADVANCED_SOLAR_ARRAY);
+
+            
+    public static final DeferredItem<BlockItem> POWER_CABLE_ITEM = blockItem("power_cable", ModBlocks.POWER_CABLE);
+    public static final DeferredItem<BlockItem> AIR_PIPE_ITEM = blockItem("air_pipe", ModBlocks.AIR_PIPE);
+    public static final DeferredItem<BlockItem> OXYGEN_GENERATOR_ITEM =
+            blockItem("oxygen_generator", ModBlocks.OXYGEN_GENERATOR);
+    public static final DeferredItem<BlockItem> LIFE_SUPPORT_UNIT_ITEM = blockItem("life_support_unit", ModBlocks.LIFE_SUPPORT_UNIT);
+    public static final DeferredItem<BlockItem> ATMOSPHERIC_SAMPLER_ITEM = blockItem("atmospheric_sampler", ModBlocks.ATMOSPHERIC_SAMPLER);
+    public static final DeferredItem<Item> HABITAT_KIT = ITEMS.register("habitat_kit",
+            () -> new HabitatKitItem(new Item.Properties().stacksTo(1)));
+    public static final DeferredItem<BlockItem> UPS_ITEM = blockItem("ups", ModBlocks.UPS);
 
     public static void register() { }
 }

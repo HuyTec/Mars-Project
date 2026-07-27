@@ -1,0 +1,79 @@
+{
+	"format_version": "1.12.0",
+	"minecraft:geometry": [
+		{
+			"description": {
+				"identifier": "geometry.cable",
+				"texture_width": 32,
+				"texture_height": 32,
+				"visible_bounds_width": 3,
+				"visible_bounds_height": 3,
+				"visible_bounds_offset": [0, 0.5, 0]
+			},
+			"bones": [
+				{
+					"name": "root",
+					"pivot": [0, 8, 0],
+					"rotation": [0, 180, 0]
+				},
+				{
+					"name": "center",
+					"parent": "root",
+					"pivot": [0, 0, 0],
+					"cubes": [
+						{"origin": [-2, 6, -2], "size": [4, 4, 4], "uv": [0, 0]}
+					]
+				},
+				{
+					"name": "north",
+					"parent": "root",
+					"pivot": [0, 0, 0],
+					"cubes": [
+						{"origin": [-1, 7, 2], "size": [2, 2, 6], "uv": [0, 8]}
+					]
+				},
+				{
+					"name": "south",
+					"parent": "root",
+					"pivot": [0, 0, 0],
+					"cubes": [
+						{"origin": [-1, 7, 2], "size": [2, 2, 6], "pivot": [0, -1, 0], "rotation": [0, 180, 0], "uv": [0, 16]}
+					]
+				},
+				{
+					"name": "west",
+					"parent": "root",
+					"pivot": [0, 0, 0],
+					"cubes": [
+						{"origin": [-8, 7, -1], "size": [6, 2, 2], "uv": [16, 0]}
+					]
+				},
+				{
+					"name": "east",
+					"parent": "root",
+					"pivot": [0, 0, 0],
+					"cubes": [
+						{"origin": [2, 7, -1], "size": [6, 2, 2], "uv": [16, 4]}
+					]
+				},
+				{
+					"name": "up",
+					"parent": "root",
+					"pivot": [0, 0, 0],
+					"rotation": [0, 0, -90],
+					"cubes": [
+						{"origin": [10, -1, -1], "size": [6, 2, 2], "uv": [16, 8]}
+					]
+				},
+				{
+					"name": "down",
+					"parent": "root",
+					"pivot": [0, 0, 0],
+					"cubes": [
+						{"origin": [-6, -1, -1], "size": [6, 2, 2], "pivot": [0, 0, 0], "rotation": [0, 0, 90], "uv": [16, 12]}
+					]
+				}
+			]
+		}
+	]
+}

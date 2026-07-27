@@ -1,0 +1,15 @@
+{
+  "type": "terraforming_mars:machine_recipe",
+  "machine_type": "terraforming_mars:oxygen_generator",
+  "inputs": [
+    {
+      "item": "terraforming_mars:co2_canister"
+    }
+  ],
+  "output": {
+    "item": "terraforming_mars:o2_canister",
+    "count": 1
+  },
+  "processing_time": 200,
+  "power_cost": 40
+}

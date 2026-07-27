@@ -1,23 +1,26 @@
 {
   "type": "minecraft:block",
-  "pools": [ { "rolls": 1, "entries": [ { "type": "minecraft:item", "name": "terraforming_mars:layered_sulfate" } ], "conditions": [ { "condition": "minecraft:survives_explosion" } ] } ]
-}
-{
-    "pools":  [
-                  {
-                      "entries":  [
-                                      {
-                                          "functions":  [
-                                                            {
-                                                                "function":  "minecraft:explosion_decay"
-                                                            }
-                                                        ],
-                                          "name":  "terraforming_mars:layered_sulfate",
-                                          "type":  "minecraft:item"
-                                      }
-                                  ],
-                      "rolls":  1
-                  }
-              ],
-    "type":  "minecraft:block"
+  "pools": [{
+    "bonus_rolls": 0.0,
+    "entries": [{
+      "type": "minecraft:alternatives",
+      "children": [
+        {
+          "type": "minecraft:item",
+          "conditions": [{
+            "condition": "minecraft:match_tool",
+            "predicate": {"predicates": {"minecraft:enchantments": [{"enchantment": "minecraft:silk_touch", "levels": {"min": 1}}]}}
+          }],
+          "name": "terraforming_mars:layered_sulfate"
+        },
+        {
+          "type": "minecraft:item",
+          "functions": [{"function": "minecraft:explosion_decay"}],
+          "name": "terraforming_mars:sulfate_powder"
+        }
+      ]
+    }],
+    "rolls": 1.0
+  }],
+  "random_sequence": "terraforming_mars:blocks/layered_sulfate"
 }

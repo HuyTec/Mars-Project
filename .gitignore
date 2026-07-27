@@ -1,5 +1,7 @@
 ### Gradle ###
 .gradle
+.gradle-codex/
+.gradle-solar/
 build/
 !gradle/wrapper/gradle-wrapper.jar
 !**/src/**/build/
@@ -38,3 +40,8 @@ run/
 **/src/generated/**/.cache/
 repo/
 !**/src/**/repo/
+**/jre_21/
+**/java_home/
+*.jre/
+/Install/
+

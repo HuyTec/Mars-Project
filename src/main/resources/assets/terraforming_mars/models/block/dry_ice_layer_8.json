@@ -1,4 +1,0 @@
-{
-  "parent": "minecraft:block/snow_height16",
-  "textures": { "texture": "terraforming_mars:block/frozen_dust" }
-}

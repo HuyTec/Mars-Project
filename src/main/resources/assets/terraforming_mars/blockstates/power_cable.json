@@ -1,0 +1,9 @@
+{
+  "multipart": [
+    {
+      "apply": {
+        "model": "terraforming_mars:block/power_cable"
+      }
+    }
+  ]
+}
