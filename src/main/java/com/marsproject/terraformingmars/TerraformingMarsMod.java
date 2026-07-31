@@ -147,6 +147,12 @@ public class TerraformingMarsMod {
                 MarsWeatherSyncPayload.STREAM_CODEC,
                 (payload, context) -> context.enqueueWork(() -> ClientMarsWeatherData.update(payload))
         );
+        registrar.playToClient(
+                com.marsproject.terraformingmars.network.SurvivalSyncPayload.TYPE,
+                com.marsproject.terraformingmars.network.SurvivalSyncPayload.STREAM_CODEC,
+                (payload, context) -> context.enqueueWork(() ->
+                        com.marsproject.terraformingmars.client.ClientSurvivalData.update(payload))
+        );
     }
 
     private static final KeyMapping TEST_CUTSCENE_KEY = new KeyMapping(
@@ -201,6 +207,11 @@ public class TerraformingMarsMod {
 
         @SubscribeEvent
         static void registerGuiLayers(RegisterGuiLayersEvent event) {
+            event.registerAbove(
+                    net.neoforged.neoforge.client.gui.VanillaGuiLayers.FOOD_LEVEL,
+                    new ResourceLocation(TerraformingMarsMod.MODID, "survival_bars"),
+                    new com.marsproject.terraformingmars.client.SurvivalBarsHud()
+            );
             event.registerAboveAll(
                     new ResourceLocation(
                             TerraformingMarsMod.MODID,

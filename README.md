@@ -117,6 +117,16 @@ Mỗi stage có các thuộc tính chính:
 
 Client nhận dữ liệu qua custom payload và hiển thị bằng Mars Environment HUD. Các handler trong package `event` áp dụng oxygen, radiation, gravity và weather lên người chơi.
 
+Do áp suất ngoài trời hiện còn thấp, liquid water không thể được đặt trong Mars dimension:
+
+- Water bucket bị tiêu thụ nhưng nước bay hơi ngay.
+- Source và flowing water bị loại bỏ khi có physics update.
+- Không thể tạo infinite water source.
+- Block waterlogged được giữ lại nhưng mất phần nước.
+- Có sound, particle và thông báo khi người chơi thử đặt water bucket.
+
+Quy tắc này hiện áp dụng cho toàn bộ Mars dimension. Khi sealed-room atmosphere được triển khai, `MarsWaterEvaporationHandler.isLowPressureExposure(...)` cần được nối với room pressure để nước tồn tại bên trong base đủ áp suất.
+
 ## Hệ thống điện
 
 Luồng điện hiện tại:
@@ -344,6 +354,7 @@ Hệ thống sealed room dự kiến sẽ dùng bounded BFS. Air Vent và Air Cr
 - Air Creator tạo `BREATHABLE_AIR` vào buffer nhưng chưa bơm vào sealed room.
 - Chưa có bounded BFS kiểm tra phòng kín.
 - Chưa có room pressure, leak simulation hoặc atmosphere persistence theo từng phòng.
+- Nước hiện bay hơi ở toàn bộ Mars dimension, kể cả bên trong công trình chưa có room-pressure record.
 - Chưa miễn oxygen damage và radiation effect cho người chơi ở trong base.
 - GUI machine vẫn là giao diện debug cơ bản.
 - Project chưa có automated test source; Gradle hiện báo `test NO-SOURCE`.

@@ -88,6 +88,7 @@
     "block.terraforming_mars.atmospheric_sampler": "Atmospheric Sampler",
     "message.terraforming_mars.habitat_obstructed": "The habitat needs a clear 7 x 5 x 7 area.",
     "message.terraforming_mars.landing_kit": "Stage 0 landing supplies received. Deploy the habitat, close its airlock, then place a solar array under open sky.",
+    "message.terraforming_mars.water_evaporated": "The low atmospheric pressure makes the water evaporate immediately.",
     "message.terraforming_mars.solar_tracking_on": "Solar tracking enabled",
     "message.terraforming_mars.solar_tracking_off": "Solar array returning to its initial position",
     "message.terraforming_mars.solar_cleaned": "Solar panel cleaned",
@@ -136,5 +137,10 @@
     "hud.terraforming_mars.status.lethal": "STATUS: ENVIRONMENT LETHAL",
     "hud.terraforming_mars.status.error": "STATUS: UNKNOWN / ERROR",
     "hud.terraforming_mars.status.uncalibrated": "STATUS: ENVIRONMENT UNCALIBRATED",
-    "hud.terraforming_mars.status.calibrating": "STATUS: CALIBRATING"
+    "hud.terraforming_mars.status.calibrating": "STATUS: CALIBRATING",
+    "hud.terraforming_mars.health": "Health %s/%s",
+    "hud.terraforming_mars.hunger": "Hunger %s/20",
+    "hud.terraforming_mars.air": "Air %s%%",
+    "hud.terraforming_mars.thirst": "Thirst %s%%",
+    "hud.terraforming_mars.body_temperature": "Temp %s°C"
 }
