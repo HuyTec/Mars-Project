@@ -1,6 +1,6 @@
 {
   "parent": "terraforming_mars:block/machine_atlas_cube",
   "textures": {
-    "machine": "terraforming_mars:block/oxygen_generator"
+    "machine": "terraforming_mars:block/air_creator"
   }
 }

@@ -2,11 +2,13 @@ package com.marsproject.terraformingmars.block;
 
 import com.marsproject.terraformingmars.block.entity.MachineBlockEntity;
 import com.marsproject.terraformingmars.machine.MachineType;
+import com.marsproject.terraformingmars.pipe.PipeConnectable;
 import com.marsproject.terraformingmars.power.CableConnectable;
 import com.marsproject.terraformingmars.registry.ModBlockEntities;
 import com.mojang.serialization.MapCodec;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.Direction;
+import net.minecraft.network.chat.Component;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.world.InteractionResult;
 import net.minecraft.world.entity.LivingEntity;
@@ -34,7 +36,7 @@ import java.util.List;
 
 /** Data-driven controller shared by all standard processing machines. */
 public final class MachineBlock extends BaseEntityBlock
-        implements MultiblockController, CableConnectable {
+        implements MultiblockController, CableConnectable, PipeConnectable {
     public static final DirectionProperty FACING = BlockStateProperties.HORIZONTAL_FACING;
     private final MachineType machineType;
 
@@ -104,6 +106,13 @@ public final class MachineBlock extends BaseEntityBlock
         if (!level.isClientSide()
                 && player instanceof ServerPlayer serverPlayer
                 && level.getBlockEntity(pos) instanceof MachineBlockEntity machine) {
+            MachineType type = machine.getMachineType();
+            serverPlayer.displayClientMessage(Component.translatable(
+                    machine.getStatusTranslationKey(),
+                    machine.getDisplayName(),
+                    type.energyPerOperation(),
+                    type.operationIntervalTicks()
+            ), false);
             serverPlayer.openMenu(machine, buffer -> buffer.writeBlockPos(pos));
         }
         return InteractionResult.sidedSuccess(level.isClientSide());
@@ -119,11 +128,86 @@ public final class MachineBlock extends BaseEntityBlock
     @Override
     public boolean canConnectCable(LevelReader level, BlockPos machinePos,
                                    BlockState machineState, BlockPos cablePos) {
-        return getCablePos(machinePos, machineState).equals(cablePos);
+        if (machineType.operation().isAirCreator()) {
+            return frontCablePos(machinePos, machineState).equals(cablePos)
+                    || backCablePos(machinePos, machineState).equals(cablePos)
+                    || topCablePos(machinePos).equals(cablePos)
+                    || bottomCablePos(machinePos).equals(cablePos);
+        }
+        return leftCablePos(machinePos, machineState).equals(cablePos)
+                || rightCablePos(machinePos, machineState).equals(cablePos);
     }
 
+    /** @deprecated Machines now expose left and right cable ports. */
+    @Deprecated
     public static BlockPos getCablePos(BlockPos pos, BlockState state) {
+        return leftCablePos(pos, state);
+    }
+
+    public static BlockPos leftCablePos(BlockPos pos, BlockState state) {
+        Direction front = state.getValue(FACING);
+        return pos.relative(front.getCounterClockWise());
+    }
+
+    public static BlockPos rightCablePos(BlockPos pos, BlockState state) {
+        Direction front = state.getValue(FACING);
+        return pos.relative(front.getClockWise());
+    }
+
+    public static BlockPos frontCablePos(BlockPos pos, BlockState state) {
+        return pos.relative(state.getValue(FACING));
+    }
+
+    public static BlockPos backCablePos(BlockPos pos, BlockState state) {
         return pos.relative(state.getValue(FACING).getOpposite());
+    }
+
+    public static BlockPos topCablePos(BlockPos pos) {
+        return pos.above();
+    }
+
+    public static BlockPos bottomCablePos(BlockPos pos) {
+        return pos.below();
+    }
+
+    public static BlockPos inputPipePos(BlockPos pos, BlockState state) {
+        Direction front = state.getValue(FACING);
+        return pos.relative(front.getOpposite());
+    }
+
+    public static BlockPos outputPipePos(BlockPos pos, BlockState state) {
+        return pos.above();
+    }
+
+    public static BlockPos oxygenInputPipePos(BlockPos pos, BlockState state) {
+        return leftCablePos(pos, state);
+    }
+
+    public static BlockPos nitrogenInputPipePos(BlockPos pos, BlockState state) {
+        return rightCablePos(pos, state);
+    }
+
+    @Override
+    public boolean canConnectPipe(LevelReader level, BlockPos machinePos,
+                                  BlockState machineState, BlockPos pipePos) {
+        if (machineType.operation().isAirCreator()) {
+            return oxygenInputPipePos(machinePos, machineState).equals(pipePos)
+                    || nitrogenInputPipePos(machinePos, machineState).equals(pipePos);
+        }
+        return inputPipePos(machinePos, machineState).equals(pipePos)
+                || outputPipePos(machinePos, machineState).equals(pipePos);
+    }
+
+    public List<BlockPos> cablePortPositions(BlockPos pos, BlockState state) {
+        if (machineType.operation().isAirCreator()) {
+            return List.of(
+                    frontCablePos(pos, state),
+                    backCablePos(pos, state),
+                    topCablePos(pos),
+                    bottomCablePos(pos)
+            );
+        }
+        return List.of(leftCablePos(pos, state), rightCablePos(pos, state));
     }
 
     @Override

@@ -21,7 +21,7 @@ import software.bernie.geckolib.util.GeckoLibUtil;
 
 public final class UpsBlockEntity extends BlockEntity implements GeoBlockEntity {
     private static final int NETWORK_SCAN_INTERVAL = 10;
-    private static final int ENERGY_CAPACITY = 10_000;
+    private static final int ENERGY_CAPACITY = 500_000;
 
     private final AnimatableInstanceCache cache = GeckoLibUtil.createInstanceCache(this);
     private PowerNetworkSnapshot network = PowerNetworkSnapshot.empty();
@@ -98,6 +98,23 @@ public final class UpsBlockEntity extends BlockEntity implements GeoBlockEntity 
         setChanged();
         updatePoweredState();
         return supplied;
+    }
+
+    /**
+     * Atomically extracts the complete request or leaves stored energy unchanged.
+     */
+    public boolean tryConsumeEnergy(int requestedEnergy) {
+        if (requestedEnergy <= 0) {
+            return true;
+        }
+        if (storedEnergy < requestedEnergy) {
+            return false;
+        }
+
+        storedEnergy -= requestedEnergy;
+        setChanged();
+        updatePoweredState();
+        return true;
     }
 
     public PowerNetworkSnapshot getNetworkSnapshot() {

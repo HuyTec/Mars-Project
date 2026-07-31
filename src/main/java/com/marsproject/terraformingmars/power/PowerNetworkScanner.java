@@ -1,6 +1,9 @@
 package com.marsproject.terraformingmars.power;
 
 import com.marsproject.terraformingmars.block.CableBlock;
+import com.marsproject.terraformingmars.block.UpsBlock;
+import com.marsproject.terraformingmars.block.entity.MultiblockPartBlockEntity;
+import com.marsproject.terraformingmars.block.entity.UpsBlockEntity;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.Direction;
 import net.minecraft.world.level.Level;
@@ -87,5 +90,80 @@ public final class PowerNetworkScanner {
                 totalWatts,
                 truncated
         );
+    }
+
+    /**
+     * Finds storage devices whose output port, never their input port, touches
+     * the connected cable network.
+     */
+    public static List<UpsBlockEntity> findOutputUps(Level level, BlockPos startCable) {
+        if (!(level.getBlockState(startCable).getBlock() instanceof CableBlock)) {
+            return List.of();
+        }
+
+        Queue<BlockPos> open = new ArrayDeque<>();
+        Set<BlockPos> cables = new HashSet<>();
+        Set<BlockPos> upsAnchors = new HashSet<>();
+        open.add(startCable.immutable());
+
+        while (!open.isEmpty() && cables.size() < MAX_CABLES_PER_SCAN) {
+            BlockPos cablePos = open.remove();
+            if (!cables.add(cablePos)) {
+                continue;
+            }
+
+            BlockState cableState = level.getBlockState(cablePos);
+            for (Direction direction : Direction.values()) {
+                if (!CableBlock.isConnected(cableState, direction)) {
+                    continue;
+                }
+
+                BlockPos neighborPos = cablePos.relative(direction);
+                if (!level.hasChunkAt(neighborPos)) {
+                    continue;
+                }
+
+                BlockState neighborState = level.getBlockState(neighborPos);
+                if (neighborState.getBlock() instanceof CableBlock) {
+                    if (CableBlock.isConnected(neighborState, direction.getOpposite())
+                            && !cables.contains(neighborPos)) {
+                        open.add(neighborPos.immutable());
+                    }
+                    continue;
+                }
+
+                BlockPos upsAnchor = findUpsAnchor(level, neighborPos);
+                if (upsAnchor == null) {
+                    continue;
+                }
+                BlockState upsState = level.getBlockState(upsAnchor);
+                if (upsState.getBlock() instanceof UpsBlock
+                        && UpsBlock.isOutputCablePort(upsAnchor, upsState, cablePos)) {
+                    upsAnchors.add(upsAnchor.immutable());
+                }
+            }
+        }
+
+        return upsAnchors.stream()
+                .sorted(java.util.Comparator.comparingLong(BlockPos::asLong))
+                .map(level::getBlockEntity)
+                .filter(UpsBlockEntity.class::isInstance)
+                .map(UpsBlockEntity.class::cast)
+                .toList();
+    }
+
+    private static BlockPos findUpsAnchor(Level level, BlockPos devicePos) {
+        if (level.getBlockState(devicePos).getBlock() instanceof UpsBlock) {
+            return devicePos;
+        }
+        if (level.getBlockEntity(devicePos) instanceof MultiblockPartBlockEntity part) {
+            BlockPos controllerPos = part.getControllerPos();
+            BlockState controllerState = level.getBlockState(controllerPos);
+            if (controllerState.getBlock() instanceof UpsBlock
+                    && part.matchesController(controllerState.getBlock())) {
+                return controllerPos;
+            }
+        }
+        return null;
     }
 }

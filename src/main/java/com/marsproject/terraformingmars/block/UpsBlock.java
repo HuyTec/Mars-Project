@@ -159,16 +159,23 @@ public final class UpsBlock extends BaseEntityBlock implements CableConnectable,
             return partPos(anchor, state, 0, 0, 1).relative(right);
         }
 
-    public static boolean isCablePort(BlockPos anchor, BlockState state, BlockPos cablePos) {
+    public static boolean isOutputCablePort(BlockPos anchor, BlockState state, BlockPos cablePos) {
         Direction front = state.getValue(FACING);
         Direction back = front.getOpposite();
-
-        if (cablePos.equals(inputCablePos(anchor, state))) return true;
 
         return cablePos.equals(partPos(anchor, state, 0, 0, 0).relative(front))   // output 1
                 || cablePos.equals(partPos(anchor, state, 1, 1, 0).relative(front)) // output 2
                 || cablePos.equals(partPos(anchor, state, 0, 0, 1).relative(back))  // output 3 (đã sửa: đúng block + đúng hướng)
                 || cablePos.equals(partPos(anchor, state, 1, 1, 1).relative(back)); // output 4
+    }
+
+    public static boolean isInputCablePort(BlockPos anchor, BlockState state, BlockPos cablePos) {
+        return cablePos.equals(inputCablePos(anchor, state));
+    }
+
+    public static boolean isCablePort(BlockPos anchor, BlockState state, BlockPos cablePos) {
+        return isInputCablePort(anchor, state, cablePos)
+                || isOutputCablePort(anchor, state, cablePos);
     }
 
     @Override

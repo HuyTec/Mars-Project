@@ -1,0 +1,8 @@
+{
+  "variants": {
+    "facing=north": { "model": "terraforming_mars:block/air_vent" },
+    "facing=east":  { "model": "terraforming_mars:block/air_vent", "y": 90 },
+    "facing=south": { "model": "terraforming_mars:block/air_vent", "y": 180 },
+    "facing=west":  { "model": "terraforming_mars:block/air_vent", "y": 270 }
+  }
+}

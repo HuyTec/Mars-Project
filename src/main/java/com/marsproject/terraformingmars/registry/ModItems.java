@@ -111,6 +111,12 @@ public final class ModItems {
     public static final DeferredItem<BlockItem> AIR_PIPE_ITEM = blockItem("air_pipe", ModBlocks.AIR_PIPE);
     public static final DeferredItem<BlockItem> OXYGEN_GENERATOR_ITEM =
             blockItem("oxygen_generator", ModBlocks.OXYGEN_GENERATOR);
+    public static final DeferredItem<BlockItem> NITROGEN_GENERATOR_ITEM =
+            blockItem("nitrogen_generator", ModBlocks.NITROGEN_GENERATOR);
+    public static final DeferredItem<BlockItem> AIR_CREATOR_ITEM =
+            blockItem("air_creator", ModBlocks.AIR_CREATOR);
+    public static final DeferredItem<BlockItem> AIR_VENT_ITEM =
+            blockItem("air_vent", ModBlocks.AIR_VENT);
     public static final DeferredItem<BlockItem> LIFE_SUPPORT_UNIT_ITEM = blockItem("life_support_unit", ModBlocks.LIFE_SUPPORT_UNIT);
     public static final DeferredItem<BlockItem> ATMOSPHERIC_SAMPLER_ITEM = blockItem("atmospheric_sampler", ModBlocks.ATMOSPHERIC_SAMPLER);
     public static final DeferredItem<Item> HABITAT_KIT = ITEMS.register("habitat_kit",

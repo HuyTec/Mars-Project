@@ -1,12 +1,17 @@
 package com.marsproject.terraformingmars.block.entity;
 
 import com.marsproject.terraformingmars.block.CableBlock;
+import com.marsproject.terraformingmars.block.AirVentBlock;
 import com.marsproject.terraformingmars.block.MachineBlock;
+import com.marsproject.terraformingmars.block.PipeBlock;
+import com.marsproject.terraformingmars.gas.GasType;
 import com.marsproject.terraformingmars.machine.MachineMenu;
 import com.marsproject.terraformingmars.machine.MachineRecipe;
 import com.marsproject.terraformingmars.machine.MachineRecipeInput;
 import com.marsproject.terraformingmars.machine.MachineType;
 import com.marsproject.terraformingmars.power.PowerNetworkScanner;
+import com.marsproject.terraformingmars.pipe.PipeNetworkScanner;
+import com.marsproject.terraformingmars.pipe.PipeNetworkSnapshot;
 import com.marsproject.terraformingmars.registry.ModBlockEntities;
 import com.marsproject.terraformingmars.registry.ModRecipeTypes;
 import net.minecraft.core.BlockPos;
@@ -35,17 +40,25 @@ import software.bernie.geckolib.animation.RawAnimation;
 import software.bernie.geckolib.util.GeckoLibUtil;
 
 import java.util.Optional;
+import java.util.HashSet;
+import java.util.List;
+import java.util.Set;
 
 public final class MachineBlockEntity extends BlockEntity
         implements MenuProvider, GeoBlockEntity {
     public static final int STATUS_IDLE = 0;
     public static final int STATUS_WORKING = 1;
     public static final int STATUS_NO_POWER = 2;
+    public static final int STATUS_NO_INPUT = 3;
+    public static final int STATUS_OUTPUT_FULL = 4;
+    public static final int GAS_CAPACITY = 10_000;
 
     private final AnimatableInstanceCache cache = GeckoLibUtil.createInstanceCache(this);
     private final ItemStackHandler items;
     private int progress;
     private int processingTime;
+    private int operationTicks;
+    private int storedOutputGas;
     private int status = STATUS_IDLE;
 
     private final ContainerData data = new ContainerData() {
@@ -94,21 +107,27 @@ public final class MachineBlockEntity extends BlockEntity
 
     public static void serverTick(Level level, BlockPos pos, BlockState state,
                                   MachineBlockEntity machine) {
+        MachineType type = machine.getMachineType();
+        machine.operationTicks++;
+        if (machine.operationTicks >= type.operationIntervalTicks()) {
+            machine.operationTicks = 0;
+            machine.setStatus(machine.tryOperate());
+            machine.setChanged();
+        }
+
         Optional<RecipeHolder<MachineRecipe>> match = machine.findRecipe(level);
         if (match.isEmpty() || !machine.canAccept(match.get().value().output())) {
-            machine.updateState(STATUS_IDLE, 0);
+            machine.resetRecipeProgress();
             return;
         }
 
         MachineRecipe recipe = match.get().value();
         machine.processingTime = recipe.processingTimeTicks();
-        if (!machine.hasPower(level, state, recipe.powerCostWatts())) {
-            machine.updateState(STATUS_NO_POWER, machine.processingTime);
+        if (!machine.isActive()) {
             return;
         }
 
         machine.progress++;
-        machine.updateState(STATUS_WORKING, machine.processingTime);
         if (machine.progress >= recipe.processingTimeTicks()) {
             machine.finishRecipe(recipe);
             machine.progress = 0;
@@ -130,13 +149,165 @@ public final class MachineBlockEntity extends BlockEntity
         );
     }
 
-    private boolean hasPower(Level level, BlockState state, int watts) {
-        if (watts == 0) {
+    public boolean isActive() {
+        return status == STATUS_WORKING;
+    }
+
+    public String getStatusTranslationKey() {
+        return switch (status) {
+            case STATUS_WORKING -> "message.terraforming_mars.machine_active";
+            case STATUS_NO_INPUT -> "message.terraforming_mars.machine_no_input";
+            case STATUS_OUTPUT_FULL -> "message.terraforming_mars.machine_output_full";
+            default -> "message.terraforming_mars.machine_inactive";
+        };
+    }
+
+    public int getEnergyPerOperation() {
+        return getMachineType().energyPerOperation();
+    }
+
+    public int getStoredOutputGas() {
+        return storedOutputGas;
+    }
+
+    public int getGasCapacity() {
+        return GAS_CAPACITY;
+    }
+
+    public GasType getOutputGasType() {
+        return getMachineType().operation().outputGas();
+    }
+
+    public boolean hasGas(GasType gasType, int amount) {
+        return amount >= 0 && getOutputGasType() == gasType && storedOutputGas >= amount;
+    }
+
+    public boolean tryConsumeGas(GasType gasType, int amount) {
+        if (amount <= 0) {
             return true;
         }
-        BlockPos cablePos = MachineBlock.getCablePos(worldPosition, state);
-        return level.getBlockState(cablePos).getBlock() instanceof CableBlock
-                && PowerNetworkScanner.scan(level, cablePos).totalWatts() >= watts;
+        if (!hasGas(gasType, amount)) {
+            return false;
+        }
+        storedOutputGas -= amount;
+        setChanged();
+        syncToClient();
+        return true;
+    }
+
+    private int tryOperate() {
+        MachineType type = getMachineType();
+        int produced = type.operation().outputAmount();
+        if (storedOutputGas > GAS_CAPACITY - produced) {
+            return STATUS_OUTPUT_FULL;
+        }
+
+        if (type.operation().isAirCreator()) {
+            return tryCreateAir(type);
+        }
+        if (type.operation().requiresAirVent() && !hasAirVentInput()) {
+            return STATUS_NO_INPUT;
+        }
+        if (!tryConsumePower()) {
+            return STATUS_NO_POWER;
+        }
+
+        storedOutputGas += produced;
+        syncToClient();
+        return STATUS_WORKING;
+    }
+
+    private int tryCreateAir(MachineType type) {
+        BlockState state = getBlockState();
+        MachineBlockEntity oxygenSource = findGasSource(
+                MachineBlock.oxygenInputPipePos(worldPosition, state),
+                GasType.OXYGEN,
+                type.operation().oxygenInput()
+        );
+        MachineBlockEntity nitrogenSource = findGasSource(
+                MachineBlock.nitrogenInputPipePos(worldPosition, state),
+                GasType.NITROGEN,
+                type.operation().nitrogenInput()
+        );
+        if (oxygenSource == null || nitrogenSource == null) {
+            return STATUS_NO_INPUT;
+        }
+        if (!tryConsumePower()) {
+            return STATUS_NO_POWER;
+        }
+
+        // Sources were checked on the server thread immediately before this transaction.
+        if (!oxygenSource.tryConsumeGas(GasType.OXYGEN, type.operation().oxygenInput())
+                || !nitrogenSource.tryConsumeGas(
+                        GasType.NITROGEN, type.operation().nitrogenInput())) {
+            return STATUS_NO_INPUT;
+        }
+        storedOutputGas += type.operation().outputAmount();
+        syncToClient();
+        return STATUS_WORKING;
+    }
+
+    private boolean hasAirVentInput() {
+        if (level == null) {
+            return false;
+        }
+        BlockPos pipePos = MachineBlock.inputPipePos(worldPosition, getBlockState());
+        if (!(level.getBlockState(pipePos).getBlock() instanceof PipeBlock)) {
+            return false;
+        }
+        return PipeNetworkScanner.scan(level, pipePos).connectedMachines().stream()
+                .anyMatch(pos -> level.getBlockState(pos).getBlock() instanceof AirVentBlock);
+    }
+
+    private @Nullable MachineBlockEntity findGasSource(BlockPos pipePos, GasType gasType,
+                                                        int requiredAmount) {
+        if (level == null || !(level.getBlockState(pipePos).getBlock() instanceof PipeBlock)) {
+            return null;
+        }
+        PipeNetworkSnapshot network = PipeNetworkScanner.scan(level, pipePos);
+        List<MachineBlockEntity> outputSources = network.connectedMachines().stream()
+                .sorted(java.util.Comparator.comparingLong(BlockPos::asLong))
+                .map(level::getBlockEntity)
+                .filter(MachineBlockEntity.class::isInstance)
+                .map(MachineBlockEntity.class::cast)
+                .filter(source -> source.getMachineType().operation().requiresAirVent())
+                .filter(source -> network.pipes().contains(MachineBlock.outputPipePos(
+                        source.getBlockPos(), source.getBlockState())))
+                .toList();
+        if (outputSources.stream().anyMatch(source -> source.getOutputGasType() != gasType)) {
+            return null;
+        }
+        return outputSources.stream()
+                .filter(source -> source.hasGas(gasType, requiredAmount))
+                .findFirst()
+                .orElse(null);
+    }
+
+    private boolean tryConsumePower() {
+        int requestedEnergy = getEnergyPerOperation();
+        if (requestedEnergy == 0) {
+            return true;
+        }
+        if (level == null || level.isClientSide()) {
+            return false;
+        }
+
+        BlockState state = getBlockState();
+        if (!(state.getBlock() instanceof MachineBlock block)) {
+            return false;
+        }
+        Set<BlockPos> checkedUps = new HashSet<>();
+        for (BlockPos cablePos : block.cablePortPositions(worldPosition, state)) {
+            if (!(level.getBlockState(cablePos).getBlock() instanceof CableBlock)) {
+                continue;
+            }
+            for (UpsBlockEntity ups : PowerNetworkScanner.findOutputUps(level, cablePos)) {
+                if (checkedUps.add(ups.getBlockPos()) && ups.tryConsumeEnergy(requestedEnergy)) {
+                    return true;
+                }
+            }
+        }
+        return false;
     }
 
     private boolean canAccept(ItemStack output) {
@@ -171,11 +342,22 @@ public final class MachineBlockEntity extends BlockEntity
         }
     }
 
-    private void updateState(int newStatus, int newProcessingTime) {
-        boolean changed = status != newStatus || processingTime != newProcessingTime;
-        status = newStatus;
-        processingTime = newProcessingTime;
-        if (changed) {
+    private void setActive(boolean active) {
+        setStatus(active ? STATUS_WORKING : STATUS_NO_POWER);
+    }
+
+    private void setStatus(int newStatus) {
+        if (status != newStatus) {
+            status = newStatus;
+            setChanged();
+            syncToClient();
+        }
+    }
+
+    private void resetRecipeProgress() {
+        if (progress != 0 || processingTime != 0) {
+            progress = 0;
+            processingTime = 0;
             setChanged();
             syncToClient();
         }
@@ -218,6 +400,8 @@ public final class MachineBlockEntity extends BlockEntity
         tag.put("Items", items.serializeNBT(registries));
         tag.putInt("Progress", progress);
         tag.putInt("ProcessingTime", processingTime);
+        tag.putInt("OperationTicks", operationTicks);
+        tag.putInt("StoredOutputGas", storedOutputGas);
         tag.putInt("Status", status);
     }
 
@@ -227,7 +411,15 @@ public final class MachineBlockEntity extends BlockEntity
         items.deserializeNBT(registries, tag.getCompound("Items"));
         progress = Math.max(0, tag.getInt("Progress"));
         processingTime = Math.max(0, tag.getInt("ProcessingTime"));
-        status = tag.getInt("Status");
+        operationTicks = Math.max(0, tag.getInt("OperationTicks"));
+        storedOutputGas = Math.max(0, Math.min(GAS_CAPACITY, tag.getInt("StoredOutputGas")));
+        status = switch (tag.getInt("Status")) {
+            case STATUS_WORKING -> STATUS_WORKING;
+            case STATUS_NO_POWER -> STATUS_NO_POWER;
+            case STATUS_NO_INPUT -> STATUS_NO_INPUT;
+            case STATUS_OUTPUT_FULL -> STATUS_OUTPUT_FULL;
+            default -> STATUS_IDLE;
+        };
     }
 
     @Override

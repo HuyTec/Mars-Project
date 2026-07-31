@@ -12,6 +12,8 @@ import com.marsproject.terraformingmars.block.MultiblockPart;
 import com.marsproject.terraformingmars.block.MultiblockPartBlock;
 import com.marsproject.terraformingmars.block.PipeBlock;
 import com.marsproject.terraformingmars.block.MachineBlock;
+import com.marsproject.terraformingmars.block.AirVentBlock;
+import com.marsproject.terraformingmars.machine.MachineOperation;
 import com.marsproject.terraformingmars.machine.MachineType;
 import net.minecraft.world.level.block.Block;
 import net.minecraft.world.level.block.SnowLayerBlock;
@@ -223,14 +225,64 @@ public final class ModBlocks {
                         new ResourceLocation(TerraformingMarsMod.MODID, "oxygen_generator"),
                         1,
                         1,
-                        new ResourceLocation(TerraformingMarsMod.MODID, "geo/ups.geo.json"),
-                        new ResourceLocation(TerraformingMarsMod.MODID, "textures/block/ups.png"),
-                        new ResourceLocation(TerraformingMarsMod.MODID, "animations/ups.animation.json"),
+                        300,
+                        120,
+                        MachineOperation.OXYGEN_GENERATION,
+                        new ResourceLocation(TerraformingMarsMod.MODID, "geo/machine.geo.json"),
+                        new ResourceLocation(TerraformingMarsMod.MODID, "textures/block/oxygen_generator.png"),
+                        new ResourceLocation(TerraformingMarsMod.MODID, "animations/machine.animation.json"),
                         List.of(),
                         "idle",
                         "working",
                         "no_power"
                 )
+        );
+
+        public static final DeferredBlock<MachineBlock> NITROGEN_GENERATOR = machine(
+                "nitrogen_generator",
+                new MachineType(
+                        new ResourceLocation(TerraformingMarsMod.MODID, "nitrogen_generator"),
+                        1,
+                        1,
+                        150,
+                        120,
+                        MachineOperation.NITROGEN_GENERATION,
+                        new ResourceLocation(TerraformingMarsMod.MODID, "geo/machine.geo.json"),
+                        new ResourceLocation(TerraformingMarsMod.MODID, "textures/block/nitrogen_generator.png"),
+                        new ResourceLocation(TerraformingMarsMod.MODID, "animations/machine.animation.json"),
+                        List.of(),
+                        "idle",
+                        "working",
+                        "no_power"
+                )
+        );
+
+        public static final DeferredBlock<MachineBlock> AIR_CREATOR = machine(
+                "air_creator",
+                new MachineType(
+                        new ResourceLocation(TerraformingMarsMod.MODID, "air_creator"),
+                        1,
+                        1,
+                        450,
+                        120,
+                        MachineOperation.AIR_CREATION,
+                        new ResourceLocation(TerraformingMarsMod.MODID, "geo/machine.geo.json"),
+                        new ResourceLocation(TerraformingMarsMod.MODID, "textures/block/air_creator.png"),
+                        new ResourceLocation(TerraformingMarsMod.MODID, "animations/machine.animation.json"),
+                        List.of(),
+                        "idle",
+                        "working",
+                        "no_power"
+                )
+        );
+
+        public static final DeferredBlock<AirVentBlock> AIR_VENT = BLOCKS.register(
+                "air_vent",
+                () -> new AirVentBlock(BlockBehaviour.Properties.of()
+                        .mapColor(MapColor.COLOR_LIGHT_BLUE)
+                        .strength(2.0F)
+                        .sound(SoundType.METAL)
+                        .requiresCorrectToolForDrops())
         );
 
         public static final DeferredBlock<Block> POWER_CABLE = BLOCKS.register("power_cable",
