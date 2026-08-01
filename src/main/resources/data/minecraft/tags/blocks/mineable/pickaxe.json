@@ -40,6 +40,24 @@
                    "terraforming_mars:basalt_boulder",
                    "terraforming_mars:iron_boulder",
                    "terraforming_mars:cryotic_boulder",
-                   "terraforming_mars:sulfate_boulder"
+                   "terraforming_mars:mars_water_ice",
+                   "terraforming_mars:water_extractor",
+                   "terraforming_mars:electrolyzer",
+                   "terraforming_mars:co2_extractor",
+                   "terraforming_mars:fuel_creator",
+                   "terraforming_mars:methane_heater",
+                   "terraforming_mars:methane_generator",
+                   "terraforming_mars:fluid_tank",
+                   "terraforming_mars:gas_tank",
+                   "terraforming_mars:sulfate_boulder",
+                   "terraforming_mars:solar_array",
+                   "terraforming_mars:advanced_solar_array",
+                   "terraforming_mars:oxygen_generator",
+                   "terraforming_mars:nitrogen_generator",
+                   "terraforming_mars:air_creator",
+                   "terraforming_mars:air_vent",
+                   "terraforming_mars:ups",
+                   "terraforming_mars:life_support_unit",
+                   "terraforming_mars:atmospheric_sampler"
                ]
 }

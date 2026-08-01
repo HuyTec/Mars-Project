@@ -1,6 +1,8 @@
 package com.marsproject.terraformingmars.world;
 
 import com.marsproject.terraformingmars.TerraformingMarsMod;
+import com.marsproject.terraformingmars.atmosphere.RoomAtmosphereManager;
+import com.marsproject.terraformingmars.registry.ModItems;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.HolderLookup;
 import net.minecraft.core.Vec3i;
@@ -14,8 +16,12 @@ import net.minecraft.world.level.block.Rotation;
 import net.minecraft.world.level.levelgen.structure.templatesystem.StructurePlaceSettings;
 import net.minecraft.world.level.levelgen.structure.templatesystem.StructureTemplate;
 import net.minecraft.world.level.saveddata.SavedData;
+import net.minecraft.world.Container;
+import net.minecraft.world.item.ItemStack;
+import net.minecraft.world.item.Items;
 
 import java.util.Optional;
+import java.util.List;
 
 /** Places the shared Mars landing base once and remembers its landing position. */
 public final class MarsBaseManager extends SavedData {
@@ -27,6 +33,8 @@ public final class MarsBaseManager extends SavedData {
             TerraformingMarsMod.MODID, "mars_base");
 
     private boolean generated;
+    private boolean atmosphereInitialized;
+    private boolean suppliesInitialized;
     private int placementVersion;
     private BlockPos origin = BlockPos.ZERO;
     private BlockPos landingPos = BlockPos.ZERO;
@@ -37,6 +45,8 @@ public final class MarsBaseManager extends SavedData {
     private static MarsBaseManager load(CompoundTag tag, HolderLookup.Provider lookupProvider) {
         MarsBaseManager data = new MarsBaseManager();
         data.generated = tag.getBoolean("Generated");
+        data.atmosphereInitialized = tag.getBoolean("AtmosphereInitialized");
+        data.suppliesInitialized = tag.getBoolean("SuppliesInitialized");
         data.placementVersion = tag.getInt("PlacementVersion");
         data.origin = readPos(tag, "Origin");
         data.landingPos = readPos(tag, "LandingPos");
@@ -46,6 +56,8 @@ public final class MarsBaseManager extends SavedData {
     @Override
     public CompoundTag save(CompoundTag tag, HolderLookup.Provider lookupProvider) {
         tag.putBoolean("Generated", generated);
+        tag.putBoolean("AtmosphereInitialized", atmosphereInitialized);
+        tag.putBoolean("SuppliesInitialized", suppliesInitialized);
         tag.putInt("PlacementVersion", placementVersion);
         writePos(tag, "Origin", origin);
         writePos(tag, "LandingPos", landingPos);
@@ -60,6 +72,18 @@ public final class MarsBaseManager extends SavedData {
         MarsBaseManager data = overworld.getDataStorage().computeIfAbsent(factory, DATA_NAME);
 
         if (data.generated && data.placementVersion >= PLACEMENT_VERSION) {
+            if (!data.atmosphereInitialized) {
+                int filled = RoomAtmosphereManager.fillInitialRoom(marsLevel, data.landingPos);
+                data.atmosphereInitialized = filled > 0;
+                data.setDirty();
+            }
+            if (!data.suppliesInitialized) {
+                marsLevel.getStructureManager().get(BASE_ID).ifPresent(template -> {
+                    data.suppliesInitialized = provisionBaseSupplies(
+                            marsLevel, data.origin, template.getSize());
+                    data.setDirty();
+                });
+            }
             return Optional.of(data.landingPos);
         }
         if (data.generated) {
@@ -106,11 +130,14 @@ public final class MarsBaseManager extends SavedData {
         data.placementVersion = PLACEMENT_VERSION;
         data.origin = origin;
         data.landingPos = findSafeLandingPosition(marsLevel, origin, size);
+        int filledAirBlocks = RoomAtmosphereManager.fillInitialRoom(marsLevel, data.landingPos);
+        data.atmosphereInitialized = filledAirBlocks > 0;
+        data.suppliesInitialized = provisionBaseSupplies(marsLevel, data.origin, size);
         data.setDirty();
 
         TerraformingMarsMod.LOGGER.info(
-                "Generated Mars base {} at {}; player landing position is {}",
-                BASE_ID, data.origin, data.landingPos);
+                "Generated Mars base {} at {}; player landing position is {}; filled {} breathable-air blocks",
+                BASE_ID, data.origin, data.landingPos, filledAirBlocks);
         return Optional.of(data.landingPos);
     }
 
@@ -153,6 +180,55 @@ public final class MarsBaseManager extends SavedData {
         return level.getBlockState(feet).getCollisionShape(level, feet).isEmpty()
                 && level.getBlockState(feet.above()).getCollisionShape(level, feet.above()).isEmpty()
                 && !level.getBlockState(feet.below()).getCollisionShape(level, feet.below()).isEmpty();
+    }
+
+    private static boolean provisionBaseSupplies(ServerLevel level, BlockPos origin, Vec3i size) {
+        Container supplyContainer = null;
+        for (int y = origin.getY(); y < origin.getY() + size.getY() && supplyContainer == null; y++) {
+            for (int x = origin.getX(); x < origin.getX() + size.getX() && supplyContainer == null; x++) {
+                for (int z = origin.getZ(); z < origin.getZ() + size.getZ(); z++) {
+                    if (level.getBlockEntity(new BlockPos(x, y, z)) instanceof Container container) {
+                        supplyContainer = container;
+                        break;
+                    }
+                }
+            }
+        }
+        if (supplyContainer == null) {
+            TerraformingMarsMod.LOGGER.warn("Mars base at {} has no supply container", origin);
+            return false;
+        }
+
+        List<ItemStack> supplies = List.of(
+                new ItemStack(Items.DIRT, 64),
+                new ItemStack(Items.OAK_LOG, 16),
+                new ItemStack(Items.OAK_PLANKS, 32),
+                new ItemStack(Items.CRAFTING_TABLE),
+                new ItemStack(Items.STICK, 16),
+                new ItemStack(Items.LEATHER_HELMET),
+                new ItemStack(Items.LEATHER_CHESTPLATE),
+                new ItemStack(Items.LEATHER_LEGGINGS),
+                new ItemStack(Items.LEATHER_BOOTS),
+                new ItemStack(Items.BREAD, 32),
+                new ItemStack(ModItems.SOLAR_ARRAY_ITEM.get(), 2),
+                new ItemStack(ModItems.POWER_CABLE_ITEM.get(), 32),
+                new ItemStack(ModItems.AIR_PIPE_ITEM.get(), 32),
+                new ItemStack(ModItems.AIR_VENT_ITEM.get(), 2),
+                new ItemStack(Items.WHEAT_SEEDS, 16),
+                new ItemStack(Items.WATER_BUCKET, 2),
+                new ItemStack(Items.TORCH, 16)
+        );
+        int supplyIndex = 0;
+        for (int slot = 0; slot < supplyContainer.getContainerSize()
+                && supplyIndex < supplies.size(); slot++) {
+            if (supplyContainer.getItem(slot).isEmpty()) {
+                supplyContainer.setItem(slot, supplies.get(supplyIndex++).copy());
+            }
+        }
+        supplyContainer.setChanged();
+        TerraformingMarsMod.LOGGER.info("Added {}/{} landing supply stacks to base at {}",
+                supplyIndex, supplies.size(), origin);
+        return supplyIndex == supplies.size();
     }
 
     private static void writePos(CompoundTag tag, String key, BlockPos pos) {

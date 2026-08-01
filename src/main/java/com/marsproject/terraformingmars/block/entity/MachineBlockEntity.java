@@ -5,15 +5,20 @@ import com.marsproject.terraformingmars.block.AirVentBlock;
 import com.marsproject.terraformingmars.block.MachineBlock;
 import com.marsproject.terraformingmars.block.PipeBlock;
 import com.marsproject.terraformingmars.gas.GasType;
+import com.marsproject.terraformingmars.atmosphere.RoomAtmosphereManager;
+import com.marsproject.terraformingmars.survival.SpaceSuitService;
 import com.marsproject.terraformingmars.machine.MachineMenu;
 import com.marsproject.terraformingmars.machine.MachineRecipe;
 import com.marsproject.terraformingmars.machine.MachineRecipeInput;
 import com.marsproject.terraformingmars.machine.MachineType;
+import com.marsproject.terraformingmars.machine.MachineOperation;
+import com.marsproject.terraformingmars.machine.ResourceStorage;
 import com.marsproject.terraformingmars.power.PowerNetworkScanner;
 import com.marsproject.terraformingmars.pipe.PipeNetworkScanner;
 import com.marsproject.terraformingmars.pipe.PipeNetworkSnapshot;
 import com.marsproject.terraformingmars.registry.ModBlockEntities;
 import com.marsproject.terraformingmars.registry.ModRecipeTypes;
+import com.marsproject.terraformingmars.registry.ModItems;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.HolderLookup;
 import net.minecraft.nbt.CompoundTag;
@@ -40,12 +45,14 @@ import software.bernie.geckolib.animation.RawAnimation;
 import software.bernie.geckolib.util.GeckoLibUtil;
 
 import java.util.Optional;
+import java.util.EnumMap;
+import java.util.Map;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
 
 public final class MachineBlockEntity extends BlockEntity
-        implements MenuProvider, GeoBlockEntity {
+        implements MenuProvider, GeoBlockEntity, ResourceStorage {
     public static final int STATUS_IDLE = 0;
     public static final int STATUS_WORKING = 1;
     public static final int STATUS_NO_POWER = 2;
@@ -58,7 +65,7 @@ public final class MachineBlockEntity extends BlockEntity
     private int progress;
     private int processingTime;
     private int operationTicks;
-    private int storedOutputGas;
+    private final EnumMap<GasType, Integer> storedResources = new EnumMap<>(GasType.class);
     private int status = STATUS_IDLE;
 
     private final ContainerData data = new ContainerData() {
@@ -68,6 +75,7 @@ public final class MachineBlockEntity extends BlockEntity
                 case 0 -> progress;
                 case 1 -> processingTime;
                 case 2 -> status;
+                case 3 -> operationTicks;
                 default -> 0;
             };
         }
@@ -78,12 +86,13 @@ public final class MachineBlockEntity extends BlockEntity
                 case 0 -> progress = value;
                 case 1 -> processingTime = value;
                 case 2 -> status = value;
+                case 3 -> operationTicks = value;
             }
         }
 
         @Override
         public int getCount() {
-            return 3;
+            return 4;
         }
     };
 
@@ -108,7 +117,7 @@ public final class MachineBlockEntity extends BlockEntity
     public static void serverTick(Level level, BlockPos pos, BlockState state,
                                   MachineBlockEntity machine) {
         MachineType type = machine.getMachineType();
-        machine.operationTicks++;
+        if (machine.shouldAdvanceOperationClock(type)) machine.operationTicks++;
         if (machine.operationTicks >= type.operationIntervalTicks()) {
             machine.operationTicks = 0;
             machine.setStatus(machine.tryOperate());
@@ -136,6 +145,18 @@ public final class MachineBlockEntity extends BlockEntity
         }
     }
 
+    private boolean shouldAdvanceOperationClock(MachineType type) {
+        if (type.operation() != MachineOperation.WATER_EXTRACTION
+                || !(level instanceof net.minecraft.server.level.ServerLevel serverLevel)) return true;
+        double temperature = com.marsproject.terraformingmars.atmosphere.RoomClimateManager
+                .temperatureNear(serverLevel, worldPosition)
+                .orElseGet(() -> com.marsproject.terraformingmars.event.PlayerSurvivalHandler
+                        .ambientTemperature(serverLevel, worldPosition));
+        if (temperature < -20.0) return level.getGameTime() % 2 == 0;
+        if (temperature < 5.0) return level.getGameTime() % 4 != 0;
+        return true;
+    }
+
     private Optional<RecipeHolder<MachineRecipe>> findRecipe(Level level) {
         MachineType type = getMachineType();
         ItemStack[] inputs = new ItemStack[type.inputSlotCount()];
@@ -156,9 +177,10 @@ public final class MachineBlockEntity extends BlockEntity
     public String getStatusTranslationKey() {
         return switch (status) {
             case STATUS_WORKING -> "message.terraforming_mars.machine_active";
+            case STATUS_NO_POWER -> "message.terraforming_mars.machine_no_power";
             case STATUS_NO_INPUT -> "message.terraforming_mars.machine_no_input";
             case STATUS_OUTPUT_FULL -> "message.terraforming_mars.machine_output_full";
-            default -> "message.terraforming_mars.machine_inactive";
+            default -> "message.terraforming_mars.machine_idle";
         };
     }
 
@@ -167,11 +189,19 @@ public final class MachineBlockEntity extends BlockEntity
     }
 
     public int getStoredOutputGas() {
-        return storedOutputGas;
+        return getStoredResource(getOutputGasType());
     }
 
     public int getGasCapacity() {
         return GAS_CAPACITY;
+    }
+
+    public String getResourceSummary() {
+        if (storedResources.isEmpty()) return "EMPTY";
+        return storedResources.entrySet().stream()
+                .sorted(Map.Entry.comparingByKey())
+                .map(entry -> entry.getKey().name() + " " + entry.getValue() + "/" + GAS_CAPACITY)
+                .collect(java.util.stream.Collectors.joining(" | "));
     }
 
     public GasType getOutputGasType() {
@@ -179,7 +209,7 @@ public final class MachineBlockEntity extends BlockEntity
     }
 
     public boolean hasGas(GasType gasType, int amount) {
-        return amount >= 0 && getOutputGasType() == gasType && storedOutputGas >= amount;
+        return amount >= 0 && getStoredResource(gasType) >= amount;
     }
 
     public boolean tryConsumeGas(GasType gasType, int amount) {
@@ -189,16 +219,45 @@ public final class MachineBlockEntity extends BlockEntity
         if (!hasGas(gasType, amount)) {
             return false;
         }
-        storedOutputGas -= amount;
-        setChanged();
-        syncToClient();
-        return true;
+        return extractResource(gasType, amount) == amount;
+    }
+
+    public int refillSuitFromOxygenBuffer(Player player, int transferLimit) {
+        int storedOxygen = getStoredResource(GasType.OXYGEN);
+        if (transferLimit <= 0 || storedOxygen <= 0) {
+            return 0;
+        }
+        int offered = Math.min(transferLimit, storedOxygen);
+        int accepted = SpaceSuitService.refill(SpaceSuitService.getChestplate(player), offered);
+        if (accepted > 0) {
+            extractResource(GasType.OXYGEN, accepted);
+        }
+        return accepted;
     }
 
     private int tryOperate() {
         MachineType type = getMachineType();
+        MachineOperation operation = type.operation();
+        return switch (operation) {
+            case WATER_EXTRACTION -> tryExtractWater(type);
+            case ELECTROLYSIS -> tryElectrolyze(type);
+            case CO2_COLLECTION -> tryCollectCarbonDioxide(type);
+            case SABATIER_REACTION -> trySabatier(type);
+            case METHANE_HEATING -> tryHeat(type);
+            case METHANE_POWER -> tryGenerateMethanePower(type);
+            default -> tryLegacyGasOperation(type);
+        };
+    }
+
+    private int tryLegacyGasOperation(MachineType type) {
         int produced = type.operation().outputAmount();
-        if (storedOutputGas > GAS_CAPACITY - produced) {
+        int storedOutputGas = getStoredResource(type.operation().outputGas());
+        if (type.operation().isAirCreator() && storedOutputGas > 0
+                && level instanceof net.minecraft.server.level.ServerLevel serverLevel) {
+            extractResource(type.operation().outputGas(), RoomAtmosphereManager.fillFromMachine(
+                    serverLevel, worldPosition, storedOutputGas));
+        }
+        if (!hasCapacity(type.operation().outputGas(), produced)) {
             return STATUS_OUTPUT_FULL;
         }
 
@@ -212,19 +271,20 @@ public final class MachineBlockEntity extends BlockEntity
             return STATUS_NO_POWER;
         }
 
-        storedOutputGas += produced;
+        insertResource(type.operation().outputGas(), produced);
+        playOperationSound();
         syncToClient();
         return STATUS_WORKING;
     }
 
     private int tryCreateAir(MachineType type) {
         BlockState state = getBlockState();
-        MachineBlockEntity oxygenSource = findGasSource(
+        ResourceStorage oxygenSource = findResourceSource(
                 MachineBlock.oxygenInputPipePos(worldPosition, state),
                 GasType.OXYGEN,
                 type.operation().oxygenInput()
         );
-        MachineBlockEntity nitrogenSource = findGasSource(
+        ResourceStorage nitrogenSource = findResourceSource(
                 MachineBlock.nitrogenInputPipePos(worldPosition, state),
                 GasType.NITROGEN,
                 type.operation().nitrogenInput()
@@ -237,14 +297,202 @@ public final class MachineBlockEntity extends BlockEntity
         }
 
         // Sources were checked on the server thread immediately before this transaction.
-        if (!oxygenSource.tryConsumeGas(GasType.OXYGEN, type.operation().oxygenInput())
-                || !nitrogenSource.tryConsumeGas(
-                        GasType.NITROGEN, type.operation().nitrogenInput())) {
+        if (oxygenSource.extractResource(GasType.OXYGEN, type.operation().oxygenInput())
+                != type.operation().oxygenInput()
+                || nitrogenSource.extractResource(GasType.NITROGEN, type.operation().nitrogenInput())
+                != type.operation().nitrogenInput()) {
             return STATUS_NO_INPUT;
         }
-        storedOutputGas += type.operation().outputAmount();
+        insertResource(type.operation().outputGas(), type.operation().outputAmount());
+        if (level instanceof net.minecraft.server.level.ServerLevel serverLevel) {
+            int storedAir = getStoredResource(GasType.BREATHABLE_AIR);
+            extractResource(GasType.BREATHABLE_AIR, RoomAtmosphereManager.fillFromMachine(
+                    serverLevel, worldPosition, storedAir));
+        }
+        playOperationSound();
         syncToClient();
         return STATUS_WORKING;
+    }
+
+    private int tryExtractWater(MachineType type) {
+        ItemStack ice = items.getStackInSlot(0);
+        boolean block = ice.is(ModItems.MARS_WATER_ICE_ITEM.get());
+        if (!block && !ice.is(ModItems.RAW_WATER_ICE_CHUNK.get())) return STATUS_NO_INPUT;
+        int produced = block ? 900 : 225;
+        if (level instanceof net.minecraft.server.level.ServerLevel serverLevel) {
+            double temperature = com.marsproject.terraformingmars.atmosphere.RoomClimateManager
+                    .temperatureNear(serverLevel, worldPosition)
+                    .orElseGet(() -> com.marsproject.terraformingmars.event.PlayerSurvivalHandler
+                            .ambientTemperature(serverLevel, worldPosition));
+            if (temperature > 40.0) produced = (int) Math.floor(produced * 0.90);
+        }
+        if (!hasCapacity(GasType.WATER, produced)
+                || !canAccept(new ItemStack(ModItems.MINERAL_RESIDUE.get()))) {
+            return STATUS_OUTPUT_FULL;
+        }
+        if (!tryConsumePower()) return STATUS_NO_POWER;
+        items.extractItem(0, 1, false);
+        insertResource(GasType.WATER, produced);
+        insertOutputItem(new ItemStack(ModItems.MINERAL_RESIDUE.get()));
+        playOperationSound();
+        return STATUS_WORKING;
+    }
+
+    private int tryElectrolyze(MachineType type) {
+        if (!hasCapacity(GasType.HYDROGEN, 2_000)
+                || !hasCapacity(GasType.OXYGEN, 1_000)) return STATUS_OUTPUT_FULL;
+        ResourceStorage water = findResourceSource(
+                MachineBlock.fluidPortPos(worldPosition, getBlockState()), GasType.WATER, 1_000);
+        if (water == null) return STATUS_NO_INPUT;
+        if (!tryConsumePower()) return STATUS_NO_POWER;
+        if (water.extractResource(GasType.WATER, 1_000) != 1_000) return STATUS_NO_INPUT;
+        insertResource(GasType.HYDROGEN, 2_000);
+        insertResource(GasType.OXYGEN, 1_000);
+        playOperationSound();
+        return STATUS_WORKING;
+    }
+
+    private int tryCollectCarbonDioxide(MachineType type) {
+        if (!(level instanceof net.minecraft.server.level.ServerLevel serverLevel)
+                || !serverLevel.dimension().equals(
+                com.marsproject.terraformingmars.screen.TeleportHelper.MARS_LEVEL_KEY)) {
+            return STATUS_NO_INPUT;
+        }
+        ItemStack filter = items.getStackInSlot(0);
+        if (!filter.is(ModItems.AIR_FILTER.get())) return STATUS_NO_INPUT;
+        if (!hasAirVentInput()) return STATUS_NO_INPUT;
+        int produced = atmosphericCollectionAmount(serverLevel);
+        if (!hasCapacity(GasType.CARBON_DIOXIDE, produced)) return STATUS_OUTPUT_FULL;
+        if (!tryConsumePower()) return STATUS_NO_POWER;
+        insertResource(GasType.CARBON_DIOXIDE, produced);
+        int wear = com.marsproject.terraformingmars.weather.MarsWeatherData.get(serverLevel)
+                .isDustStorm() ? 3 : 1;
+        damageItem(filter, wear);
+        playOperationSound();
+        return STATUS_WORKING;
+    }
+
+    private int atmosphericCollectionAmount(net.minecraft.server.level.ServerLevel serverLevel) {
+        double environmentMultiplier = worldPosition.getY() < 64 ? 1.15
+                : worldPosition.getY() > 128 ? 0.80 : 1.0;
+        if (com.marsproject.terraformingmars.weather.MarsWeatherData.get(serverLevel).isDustStorm()) {
+            environmentMultiplier *= 0.40;
+        }
+        int nearbyCollectors = 0;
+        for (BlockPos pos : BlockPos.betweenClosed(
+                worldPosition.offset(-16, -4, -16), worldPosition.offset(16, 4, 16))) {
+            if (serverLevel.getBlockState(pos).getBlock() instanceof MachineBlock block
+                    && block.getMachineType().operation() == MachineOperation.CO2_COLLECTION) {
+                nearbyCollectors++;
+            }
+        }
+        int sharedIntakeDivisor = Math.max(1, (nearbyCollectors + 3) / 4);
+        return Math.max(1, (int) Math.round(1_000 * environmentMultiplier / sharedIntakeDivisor));
+    }
+
+    private int trySabatier(MachineType type) {
+        if (!hasCapacity(GasType.METHANE, 1_000)
+                || !hasCapacity(GasType.WATER, 850)) return STATUS_OUTPUT_FULL;
+        ItemStack catalyst = items.getStackInSlot(0);
+        if (!catalyst.is(ModItems.NICKEL_CATALYST.get())) return STATUS_NO_INPUT;
+        ResourceStorage hydrogen = findResourceSource(
+                MachineBlock.oxygenInputPipePos(worldPosition, getBlockState()),
+                GasType.HYDROGEN, 4_000);
+        ResourceStorage carbonDioxide = findResourceSource(
+                MachineBlock.nitrogenInputPipePos(worldPosition, getBlockState()),
+                GasType.CARBON_DIOXIDE, 1_000);
+        if (hydrogen == null || carbonDioxide == null) return STATUS_NO_INPUT;
+        if (!tryConsumePower()) return STATUS_NO_POWER;
+        if (hydrogen.extractResource(GasType.HYDROGEN, 4_000) != 4_000
+                || carbonDioxide.extractResource(GasType.CARBON_DIOXIDE, 1_000) != 1_000) {
+            return STATUS_NO_INPUT;
+        }
+        damageCatalyst(catalyst);
+        insertResource(GasType.METHANE, 1_000);
+        insertResource(GasType.WATER, 850);
+        playOperationSound();
+        return STATUS_WORKING;
+    }
+
+    private int tryHeat(MachineType type) {
+        ResourceStorage methane = findResourceSource(
+                MachineBlock.oxygenInputPipePos(worldPosition, getBlockState()), GasType.METHANE, 10);
+        ResourceStorage oxygen = findResourceSource(
+                MachineBlock.nitrogenInputPipePos(worldPosition, getBlockState()), GasType.OXYGEN, 20);
+        if (methane == null || oxygen == null) return STATUS_NO_INPUT;
+        if (!tryConsumePower()) return STATUS_NO_POWER;
+        if (methane.extractResource(GasType.METHANE, 10) != 10
+                || oxygen.extractResource(GasType.OXYGEN, 20) != 20) return STATUS_NO_INPUT;
+        if (level instanceof net.minecraft.server.level.ServerLevel serverLevel) {
+            com.marsproject.terraformingmars.atmosphere.RoomClimateManager.supplyHeat(
+                    serverLevel, worldPosition, 100);
+        }
+        playOperationSound();
+        return STATUS_WORKING;
+    }
+
+    private int tryGenerateMethanePower(MachineType type) {
+        if (!hasPowerStorageDemand()) return STATUS_OUTPUT_FULL;
+        if (!hasCapacity(GasType.CARBON_DIOXIDE, 20)
+                || !hasCapacity(GasType.WATER, 17)) return STATUS_OUTPUT_FULL;
+        ResourceStorage methane = findResourceSource(
+                MachineBlock.oxygenInputPipePos(worldPosition, getBlockState()), GasType.METHANE, 20);
+        ResourceStorage oxygen = findResourceSource(
+                MachineBlock.nitrogenInputPipePos(worldPosition, getBlockState()), GasType.OXYGEN, 40);
+        if (methane == null || oxygen == null) return STATUS_NO_INPUT;
+        if (methane.extractResource(GasType.METHANE, 20) != 20
+                || oxygen.extractResource(GasType.OXYGEN, 40) != 40) return STATUS_NO_INPUT;
+        insertResource(GasType.CARBON_DIOXIDE, 20);
+        insertResource(GasType.WATER, 17);
+        if (level instanceof net.minecraft.server.level.ServerLevel serverLevel) {
+            com.marsproject.terraformingmars.atmosphere.RoomClimateManager.supplyHeat(
+                    serverLevel, worldPosition, 80);
+        }
+        playOperationSound();
+        return STATUS_WORKING;
+    }
+
+    private boolean hasPowerStorageDemand() {
+        if (level == null || !(getBlockState().getBlock() instanceof MachineBlock block)) return false;
+        for (BlockPos cablePos : block.cablePortPositions(worldPosition, getBlockState())) {
+            if (!(level.getBlockState(cablePos).getBlock() instanceof CableBlock)) continue;
+            if (PowerNetworkScanner.findInputUps(level, cablePos).stream()
+                    .anyMatch(ups -> ups.getStoredEnergy() < ups.getEnergyCapacity())) return true;
+        }
+        return false;
+    }
+
+    private void damageCatalyst(ItemStack catalyst) {
+        damageItem(catalyst, 1);
+    }
+
+    private void damageItem(ItemStack stack, int amount) {
+        int damage = stack.getDamageValue() + amount;
+        if (damage >= stack.getMaxDamage()) items.extractItem(0, 1, false);
+        else stack.setDamageValue(damage);
+    }
+
+    private void insertOutputItem(ItemStack output) {
+        MachineType type = getMachineType();
+        for (int slot = type.inputSlotCount(); slot < items.getSlots(); slot++) {
+            ItemStack existing = items.getStackInSlot(slot);
+            if (existing.isEmpty()) {
+                items.setStackInSlot(slot, output);
+                return;
+            }
+            if (ItemStack.isSameItemSameComponents(existing, output)
+                    && existing.getCount() < existing.getMaxStackSize()) {
+                existing.grow(output.getCount());
+                return;
+            }
+        }
+    }
+
+    private void playOperationSound() {
+        if (level != null) {
+            level.playSound(null, worldPosition, net.minecraft.sounds.SoundEvents.BEACON_AMBIENT,
+                    net.minecraft.sounds.SoundSource.BLOCKS, 0.32F, 0.95F);
+        }
     }
 
     private boolean hasAirVentInput() {
@@ -256,31 +504,100 @@ public final class MachineBlockEntity extends BlockEntity
             return false;
         }
         return PipeNetworkScanner.scan(level, pipePos).connectedMachines().stream()
-                .anyMatch(pos -> level.getBlockState(pos).getBlock() instanceof AirVentBlock);
+                .anyMatch(pos -> {
+                    BlockState state = level.getBlockState(pos);
+                    if (!(state.getBlock() instanceof AirVentBlock)) return false;
+                    BlockPos sample = AirVentBlock.samplePos(pos, state);
+                    return level instanceof net.minecraft.server.level.ServerLevel serverLevel
+                            && !RoomAtmosphereManager.hasBreathableAir(serverLevel, sample)
+                            && (serverLevel.canSeeSky(sample) || serverLevel.getBlockState(sample).isAir());
+                });
     }
 
-    private @Nullable MachineBlockEntity findGasSource(BlockPos pipePos, GasType gasType,
-                                                        int requiredAmount) {
+    private @Nullable ResourceStorage findResourceSource(BlockPos pipePos, GasType resource,
+                                                         int requiredAmount) {
         if (level == null || !(level.getBlockState(pipePos).getBlock() instanceof PipeBlock)) {
             return null;
         }
         PipeNetworkSnapshot network = PipeNetworkScanner.scan(level, pipePos);
-        List<MachineBlockEntity> outputSources = network.connectedMachines().stream()
+        List<ResourceStorage> outputSources = network.connectedMachines().stream()
                 .sorted(java.util.Comparator.comparingLong(BlockPos::asLong))
+                .filter(pos -> !pos.equals(worldPosition))
                 .map(level::getBlockEntity)
-                .filter(MachineBlockEntity.class::isInstance)
-                .map(MachineBlockEntity.class::cast)
-                .filter(source -> source.getMachineType().operation().requiresAirVent())
-                .filter(source -> network.pipes().contains(MachineBlock.outputPipePos(
-                        source.getBlockPos(), source.getBlockState())))
+                .filter(ResourceStorage.class::isInstance)
+                .map(ResourceStorage.class::cast)
+                .filter(source -> !(source instanceof MachineBlockEntity machine)
+                        || machine.isOutputNetwork(resource, network.pipes()))
                 .toList();
-        if (outputSources.stream().anyMatch(source -> source.getOutputGasType() != gasType)) {
-            return null;
-        }
         return outputSources.stream()
-                .filter(source -> source.hasGas(gasType, requiredAmount))
+                .filter(source -> source.getStoredResource(resource) >= requiredAmount)
                 .findFirst()
                 .orElse(null);
+    }
+
+    public boolean isOutputNetwork(GasType resource, Set<BlockPos> networkPipes) {
+        BlockState state = getBlockState();
+        MachineOperation operation = getMachineType().operation();
+        BlockPos output = switch (operation) {
+            case ELECTROLYSIS -> resource == GasType.OXYGEN
+                    ? MachineBlock.secondaryOutputPipePos(worldPosition, state)
+                    : MachineBlock.outputPipePos(worldPosition, state);
+            case SABATIER_REACTION -> resource == GasType.WATER
+                    ? MachineBlock.fluidPortPos(worldPosition, state)
+                    : MachineBlock.outputPipePos(worldPosition, state);
+            case METHANE_HEATING -> MachineBlock.outputPipePos(worldPosition, state);
+            case METHANE_POWER -> resource == GasType.WATER
+                    ? MachineBlock.fluidPortPos(worldPosition, state)
+                    : resource == GasType.HEAT
+                    ? MachineBlock.secondaryOutputPipePos(worldPosition, state)
+                    : MachineBlock.outputPipePos(worldPosition, state);
+            default -> MachineBlock.outputPipePos(worldPosition, state);
+        };
+        return networkPipes.contains(output);
+    }
+
+    @Override
+    public int getStoredResource(GasType resource) {
+        return storedResources.getOrDefault(resource, 0);
+    }
+
+    @Override
+    public int getResourceCapacity(GasType resource) {
+        return GAS_CAPACITY;
+    }
+
+    @Override
+    public int insertResource(GasType resource, int amount) {
+        if (amount <= 0) return 0;
+        int accepted = Math.min(amount, GAS_CAPACITY - getStoredResource(resource));
+        if (accepted > 0) {
+            storedResources.merge(resource, accepted, Integer::sum);
+            setChanged();
+            syncToClient();
+        }
+        return accepted;
+    }
+
+    @Override
+    public int extractResource(GasType resource, int amount) {
+        if (amount <= 0) return 0;
+        int extracted = Math.min(amount, getStoredResource(resource));
+        if (extracted > 0) {
+            int remaining = getStoredResource(resource) - extracted;
+            if (remaining == 0) storedResources.remove(resource);
+            else storedResources.put(resource, remaining);
+            setChanged();
+            syncToClient();
+        }
+        return extracted;
+    }
+
+    private boolean hasCapacity(GasType resource, int amount) {
+        return amount >= 0 && getStoredResource(resource) <= GAS_CAPACITY - amount;
+    }
+
+    public boolean isPowerProducing() {
+        return getMachineType().operation().isPowerGenerator() && status == STATUS_WORKING;
     }
 
     private boolean tryConsumePower() {
@@ -401,7 +718,10 @@ public final class MachineBlockEntity extends BlockEntity
         tag.putInt("Progress", progress);
         tag.putInt("ProcessingTime", processingTime);
         tag.putInt("OperationTicks", operationTicks);
-        tag.putInt("StoredOutputGas", storedOutputGas);
+        CompoundTag resources = new CompoundTag();
+        storedResources.forEach((resource, amount) -> resources.putInt(resource.name(), amount));
+        tag.put("StoredResources", resources);
+        tag.putInt("StoredOutputGas", getStoredOutputGas());
         tag.putInt("Status", status);
     }
 
@@ -412,7 +732,17 @@ public final class MachineBlockEntity extends BlockEntity
         progress = Math.max(0, tag.getInt("Progress"));
         processingTime = Math.max(0, tag.getInt("ProcessingTime"));
         operationTicks = Math.max(0, tag.getInt("OperationTicks"));
-        storedOutputGas = Math.max(0, Math.min(GAS_CAPACITY, tag.getInt("StoredOutputGas")));
+        storedResources.clear();
+        if (tag.contains("StoredResources")) {
+            CompoundTag resources = tag.getCompound("StoredResources");
+            for (GasType resource : GasType.values()) {
+                int amount = Math.max(0, Math.min(GAS_CAPACITY, resources.getInt(resource.name())));
+                if (amount > 0) storedResources.put(resource, amount);
+            }
+        } else {
+            int legacyGas = Math.max(0, Math.min(GAS_CAPACITY, tag.getInt("StoredOutputGas")));
+            if (legacyGas > 0) storedResources.put(getOutputGasType(), legacyGas);
+        }
         status = switch (tag.getInt("Status")) {
             case STATUS_WORKING -> STATUS_WORKING;
             case STATUS_NO_POWER -> STATUS_NO_POWER;

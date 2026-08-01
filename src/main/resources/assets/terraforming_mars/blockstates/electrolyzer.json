@@ -1,0 +1,1 @@
+{"variants":{"facing=north":{"model":"terraforming_mars:block/electrolyzer"},"facing=east":{"model":"terraforming_mars:block/electrolyzer","y":90},"facing=south":{"model":"terraforming_mars:block/electrolyzer","y":180},"facing=west":{"model":"terraforming_mars:block/electrolyzer","y":270}}}

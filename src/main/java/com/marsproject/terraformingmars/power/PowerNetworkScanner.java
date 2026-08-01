@@ -74,11 +74,13 @@ public final class PowerNetworkScanner {
                         && generator.canConnectCable(level, neighborPos, neighborState, cablePos)) {
                     int watts = Math.max(0,
                             generator.generatedWatts(level, neighborPos, neighborState));
-                    generators.add(new PowerSourceInfo(
-                            neighborPos.immutable(),
-                            generator.generatorType(),
-                            watts
-                    ));
+                    if (watts > 0) {
+                        generators.add(new PowerSourceInfo(
+                                neighborPos.immutable(),
+                                generator.generatorType(),
+                                watts
+                        ));
+                    }
                 }
             }
         }
@@ -97,6 +99,15 @@ public final class PowerNetworkScanner {
      * the connected cable network.
      */
     public static List<UpsBlockEntity> findOutputUps(Level level, BlockPos startCable) {
+        return findUps(level, startCable, false);
+    }
+
+    public static List<UpsBlockEntity> findInputUps(Level level, BlockPos startCable) {
+        return findUps(level, startCable, true);
+    }
+
+    private static List<UpsBlockEntity> findUps(Level level, BlockPos startCable,
+                                                boolean inputSide) {
         if (!(level.getBlockState(startCable).getBlock() instanceof CableBlock)) {
             return List.of();
         }
@@ -138,7 +149,9 @@ public final class PowerNetworkScanner {
                 }
                 BlockState upsState = level.getBlockState(upsAnchor);
                 if (upsState.getBlock() instanceof UpsBlock
-                        && UpsBlock.isOutputCablePort(upsAnchor, upsState, cablePos)) {
+                        && (inputSide
+                        ? UpsBlock.isInputCablePort(upsAnchor, upsState, cablePos)
+                        : UpsBlock.isOutputCablePort(upsAnchor, upsState, cablePos))) {
                     upsAnchors.add(upsAnchor.immutable());
                 }
             }

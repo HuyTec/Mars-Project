@@ -44,7 +44,9 @@ public final class AirVentBlock extends Block implements PipeConnectable {
     @Override
     public boolean canConnectPipe(LevelReader level, BlockPos ventPos,
                                   BlockState ventState, BlockPos pipePos) {
-        return ventPos.distManhattan(pipePos) == 1;
+        return ventPos.distManhattan(pipePos) == 1
+                && level.getBlockState(pipePos).getBlock() instanceof PipeBlock pipe
+                && pipe.getPipeType() != com.marsproject.terraformingmars.pipe.PipeType.FLUID;
     }
 
     @Override

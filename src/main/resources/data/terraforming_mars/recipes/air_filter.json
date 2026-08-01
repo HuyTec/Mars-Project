@@ -1,0 +1,1 @@
+{"type":"minecraft:crafting_shaped","category":"misc","pattern":["PPP","CWC","PPP"],"key":{"P":{"item":"minecraft:paper"},"C":{"item":"minecraft:copper_ingot"},"W":{"item":"minecraft:white_wool"}},"result":{"id":"terraforming_mars:air_filter","count":1}}

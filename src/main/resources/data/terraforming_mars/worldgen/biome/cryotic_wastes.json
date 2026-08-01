@@ -30,7 +30,8 @@
     [],
     [
       "terraforming_mars:mars_rare_iron_ore",
-      "terraforming_mars:mars_iron_ore_placed"
+      "terraforming_mars:mars_iron_ore_placed",
+      "terraforming_mars:mars_water_ice_ore_placed"
     ],
     [],
     [],

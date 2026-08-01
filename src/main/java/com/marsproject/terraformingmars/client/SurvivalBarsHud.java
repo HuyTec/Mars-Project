@@ -23,6 +23,8 @@ public final class SurvivalBarsHud implements LayeredDraw.Layer {
     private static final int NORMAL_TEMPERATURE_COLOR = 0xFF55DD66;
     private static final int COLD_COLOR = 0xFF55AAFF;
     private static final int HOT_COLOR = 0xFFFF7043;
+    private static final int SUIT_OXYGEN_COLOR = 0xFF7DE7FF;
+    private static final int ARMOR_COLOR = 0xFFB8C5D6;
 
     @Override
     public void render(GuiGraphics graphics, float partialTick) {
@@ -61,12 +63,27 @@ public final class SurvivalBarsHud implements LayeredDraw.Layer {
 
         double temperature = ClientSurvivalData.bodyTemperature();
         float temperatureRatio = (float) Mth.clamp((temperature - 25.0) / 20.0, 0.0, 1.0);
-        int temperatureColor = temperature < 35.0
+        int temperatureColor = temperature < 30.0
                 ? COLD_COLOR
                 : temperature > 39.5 ? HOT_COLOR : NORMAL_TEMPERATURE_COLOR;
         drawBar(graphics, rightX, bottomY - rowStep * 3, temperatureRatio, temperatureColor,
                 Component.translatable("hud.terraforming_mars.body_temperature",
                         String.format(Locale.ROOT, "%.1f", temperature)));
+
+        int armor = Mth.clamp(player.getArmorValue(), 0, 20);
+        drawBar(graphics, leftX, bottomY - rowStep, armor / 20.0F, ARMOR_COLOR,
+                Component.translatable("hud.terraforming_mars.armor", armor));
+
+        if (ClientSurvivalData.suitOxygenCapacity() > 0) {
+            float suitRatio = ClientSurvivalData.suitOxygen()
+                    / (float) ClientSurvivalData.suitOxygenCapacity();
+            drawBar(graphics, leftX, bottomY - rowStep * 2, suitRatio, SUIT_OXYGEN_COLOR,
+                    Component.translatable("hud.terraforming_mars.suit_oxygen",
+                            Math.round(suitRatio * 100.0F),
+                            ClientSurvivalData.suitSealed()
+                                    ? Component.translatable("hud.terraforming_mars.suit_sealed")
+                                    : Component.translatable("hud.terraforming_mars.suit_unsealed")));
+        }
     }
 
     private static void drawBar(

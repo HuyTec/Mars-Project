@@ -2,6 +2,7 @@ package com.marsproject.terraformingmars.block;
 
 import com.marsproject.terraformingmars.block.entity.PipeBlockEntity;
 import com.marsproject.terraformingmars.pipe.PipeConnectable;
+import com.marsproject.terraformingmars.pipe.PipeType;
 import com.mojang.serialization.MapCodec;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.Direction;
@@ -22,7 +23,7 @@ import net.minecraft.world.phys.shapes.VoxelShape;
 import org.jetbrains.annotations.Nullable;
 
 /** Six-way air pipe kept completely separate from the power-cable network. */
-public final class PipeBlock extends BaseEntityBlock {
+public class PipeBlock extends BaseEntityBlock {
     public static final MapCodec<PipeBlock> CODEC = simpleCodec(PipeBlock::new);
     public static final BooleanProperty NORTH = BooleanProperty.create("north");
     public static final BooleanProperty SOUTH = BooleanProperty.create("south");
@@ -38,9 +39,15 @@ public final class PipeBlock extends BaseEntityBlock {
     private static final VoxelShape EAST_ARM = box(10, 6, 6, 16, 10, 10);
     private static final VoxelShape UP_ARM = box(6, 10, 6, 10, 16, 10);
     private static final VoxelShape DOWN_ARM = box(6, 0, 6, 10, 6, 10);
+    private final PipeType pipeType;
 
     public PipeBlock(BlockBehaviour.Properties properties) {
+        this(properties, PipeType.GAS);
+    }
+
+    public PipeBlock(BlockBehaviour.Properties properties, PipeType pipeType) {
         super(properties);
+        this.pipeType = pipeType;
         registerDefaultState(stateDefinition.any()
                 .setValue(NORTH, false)
                 .setValue(SOUTH, false)
@@ -48,6 +55,10 @@ public final class PipeBlock extends BaseEntityBlock {
                 .setValue(WEST, false)
                 .setValue(UP, false)
                 .setValue(DOWN, false));
+    }
+
+    public PipeType getPipeType() {
+        return pipeType;
     }
 
     @Override
@@ -96,8 +107,9 @@ public final class PipeBlock extends BaseEntityBlock {
                                      Direction direction) {
         BlockPos otherPos = pipePos.relative(direction);
         BlockState other = level.getBlockState(otherPos);
-        if (other.getBlock() instanceof PipeBlock) {
-            return true;
+        if (other.getBlock() instanceof PipeBlock otherPipe) {
+            return level.getBlockState(pipePos).getBlock() instanceof PipeBlock thisPipe
+                    && thisPipe.pipeType == otherPipe.pipeType;
         }
         return other.getBlock() instanceof PipeConnectable connectable
                 && connectable.canConnectPipe(level, otherPos, other, pipePos);

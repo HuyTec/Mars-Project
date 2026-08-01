@@ -16,7 +16,13 @@ public final class PipeModel extends GeoModel<PipeBlockEntity> {
 
     @Override
     public ResourceLocation getTextureResource(PipeBlockEntity animatable) {
-        return new ResourceLocation(TerraformingMarsMod.MODID, "textures/block/pipe.png");
+        PipeBlock block = (PipeBlock) animatable.getBlockState().getBlock();
+        String texture = switch (block.getPipeType()) {
+            case FLUID -> "textures/block/fluid_pipe.png";
+            case HEAT -> "textures/block/heat_pipe.png";
+            default -> "textures/block/pipe.png";
+        };
+        return new ResourceLocation(TerraformingMarsMod.MODID, texture);
     }
 
     @Override

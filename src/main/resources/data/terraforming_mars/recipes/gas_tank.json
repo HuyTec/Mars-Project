@@ -1,0 +1,1 @@
+{"type":"minecraft:crafting_shaped","category":"misc","pattern":["III","G G","III"],"key":{"I":{"item":"minecraft:iron_ingot"},"G":{"item":"minecraft:glass"}},"result":{"id":"terraforming_mars:gas_tank","count":1}}

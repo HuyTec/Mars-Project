@@ -1,0 +1,1 @@
+{"type":"minecraft:crafting_shaped","category":"misc","pattern":["CQC","RMR","CQC"],"key":{"C":{"item":"minecraft:copper_ingot"},"Q":{"item":"minecraft:quartz"},"R":{"item":"minecraft:redstone"},"M":{"item":"terraforming_mars:magnetite_rock"}},"result":{"id":"terraforming_mars:nickel_catalyst","count":1}}

@@ -7,6 +7,7 @@ import com.marsproject.terraformingmars.block.entity.UpsBlockEntity;
 import com.marsproject.terraformingmars.block.entity.MultiblockPartBlockEntity;
 import com.marsproject.terraformingmars.block.entity.PipeBlockEntity;
 import com.marsproject.terraformingmars.block.entity.MachineBlockEntity;
+import com.marsproject.terraformingmars.block.entity.ResourceTankBlockEntity;
 import net.minecraft.core.registries.Registries;
 import net.minecraft.world.level.block.Block;
 import net.minecraft.world.level.block.entity.BlockEntityType;
@@ -37,7 +38,9 @@ public final class ModBlockEntities {
             BLOCK_ENTITY_TYPES.register("air_pipe",
                     () -> BlockEntityType.Builder.of(
                             PipeBlockEntity::new,
-                            ModBlocks.AIR_PIPE.get()
+                            ModBlocks.AIR_PIPE.get(),
+                            ModBlocks.FLUID_PIPE.get(),
+                            ModBlocks.HEAT_PIPE.get()
                     ).build(null));
 
     public static final DeferredHolder<BlockEntityType<?>, BlockEntityType<MachineBlockEntity>> MACHINE =
@@ -47,6 +50,13 @@ public final class ModBlockEntities {
                             ModBlocks.MACHINES.stream()
                                     .map(holder -> (Block) holder.get())
                                     .toArray(Block[]::new)
+                    ).build(null));
+
+    public static final DeferredHolder<BlockEntityType<?>, BlockEntityType<ResourceTankBlockEntity>> RESOURCE_TANK =
+            BLOCK_ENTITY_TYPES.register("resource_tank",
+                    () -> BlockEntityType.Builder.of(
+                            ResourceTankBlockEntity::new,
+                            ModBlocks.FLUID_TANK.get(), ModBlocks.GAS_TANK.get()
                     ).build(null));
 
     public static final DeferredHolder<BlockEntityType<?>, BlockEntityType<UpsBlockEntity>> UPS =

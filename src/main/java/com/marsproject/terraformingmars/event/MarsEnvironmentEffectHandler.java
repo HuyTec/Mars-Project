@@ -1,11 +1,13 @@
 package com.marsproject.terraformingmars.event;
 
 import com.marsproject.terraformingmars.TerraformingMarsMod;
+import com.marsproject.terraformingmars.atmosphere.RoomAtmosphereManager;
 import com.marsproject.terraformingmars.environment.MarsEnvironmentManager;
 import com.marsproject.terraformingmars.environment.MarsEnvironmentStage;
 import com.marsproject.terraformingmars.environment.MarsTerraformProgress;
 import com.marsproject.terraformingmars.registry.ModEffects;
 import com.marsproject.terraformingmars.screen.TeleportHelper;
+import com.marsproject.terraformingmars.survival.SpaceSuitService;
 
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.world.effect.MobEffectInstance;
@@ -32,10 +34,20 @@ public class MarsEnvironmentEffectHandler {
         // Chỉ chạy trên Mars
         if (!entity.level().dimension().equals(TeleportHelper.MARS_LEVEL_KEY))
             return;
+        ServerLevel level = (ServerLevel) entity.level();
+        // A pressurized, sealed habitat is treated as fully radiation-shielded.
+        if (RoomAtmosphereManager.hasBreathableAir(level, entity.blockPosition())) {
+            entity.removeEffect(ModEffects.RADIATION);
+            return;
+        }
+        double protection = SpaceSuitService.radiationProtection(entity);
+        if (protection >= 1.0) {
+            entity.removeEffect(ModEffects.RADIATION);
+            return;
+        }
         // Giảm tải: mỗi 2 giây kiểm tra 1 lần
         if (entity.tickCount % CHECK_INTERVAL_TICKS != 0)
             return;
-        ServerLevel level = (ServerLevel) entity.level();
         float progress = MarsTerraformProgress
                 .get(level)
                 .getProgress();
@@ -43,6 +55,12 @@ public class MarsEnvironmentEffectHandler {
                 MarsEnvironmentManager.resolve(progress);
         // Nếu môi trường Mars chưa sống được
         if (!MarsEnvironmentManager.canLive(stage)) {
+            double unshieldedFraction = 1.0 - protection;
+            int protectedInterval = CHECK_INTERVAL_TICKS * Math.max(1,
+                    (int) Math.round(1.0 / Math.max(0.05, unshieldedFraction)));
+            if (entity.tickCount % protectedInterval != 0) {
+                return;
+            }
             entity.addEffect(new MobEffectInstance(
                     ModEffects.RADIATION,
                     60, // thời gian effect

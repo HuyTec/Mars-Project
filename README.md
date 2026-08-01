@@ -117,15 +117,15 @@ Mỗi stage có các thuộc tính chính:
 
 Client nhận dữ liệu qua custom payload và hiển thị bằng Mars Environment HUD. Các handler trong package `event` áp dụng oxygen, radiation, gravity và weather lên người chơi.
 
-Do áp suất ngoài trời hiện còn thấp, liquid water không thể được đặt trong Mars dimension:
+Do áp suất ngoài trời hiện còn thấp, liquid water chỉ tồn tại trong vùng đã fill `breathable_air`:
 
-- Water bucket bị tiêu thụ nhưng nước bay hơi ngay.
+- Water bucket đặt ngoài vùng điều áp bị tiêu thụ nhưng nước bay hơi ngay.
 - Source và flowing water bị loại bỏ khi có physics update.
 - Không thể tạo infinite water source.
 - Block waterlogged được giữ lại nhưng mất phần nước.
 - Có sound, particle và thông báo khi người chơi thử đặt water bucket.
 
-Quy tắc này hiện áp dụng cho toàn bộ Mars dimension. Khi sealed-room atmosphere được triển khai, `MarsWaterEvaporationHandler.isLowPressureExposure(...)` cần được nối với room pressure để nước tồn tại bên trong base đủ áp suất.
+Trong base kín, nước được đặt bình thường. Hệ thống nhiệt nước chạy trên mọi dimension: dưới `0°C` nước đóng băng; torch, soul torch, campfire đang cháy hoặc lava trong bán kính 4 block giữ nước lỏng và làm băng tan. Nhiệt Overworld được suy ra từ biome, Nether là nóng và End là lạnh.
 
 ## Hệ thống điện
 
@@ -221,8 +221,8 @@ Air Creator:
 
 | Mặt tương đối | Chức năng |
 | --- | --- |
-| Trái | O2 input pipe |
-| Phải | N2 input pipe |
+| Trái | N2 input pipe |
+| Phải | O2 input pipe |
 | Trước | Cable |
 | Sau | Cable |
 | Trên | Cable |
@@ -261,7 +261,7 @@ Mọi machine dùng chung một GUI cơ bản:
 - Progress bar.
 - Màu trạng thái.
 
-Khi chuột phải, server gửi trạng thái machine, energy mỗi operation và interval vào chat rồi mở GUI.
+Khi chuột phải, server gửi trạng thái, gas buffer, loại gas, energy mỗi operation, interval và sơ đồ port vào chat rồi mở GUI. Operation thành công dùng beacon ambient sound; tương tác và refill dùng beacon activation sound.
 
 GUI chưa có:
 
@@ -345,17 +345,21 @@ data/terraforming_mars/structures/<structure_name>.nbt
 
 Có thể dùng WorldEdit để xây nhanh, sau đó dùng Structure Block vanilla để lưu `.nbt`. Với base lớn, nên chia thành các module như core, airlock, power room, habitat và greenhouse.
 
-Hệ thống sealed room dự kiến sẽ dùng bounded BFS. Air Vent và Air Creator đã chuẩn bị contract cần thiết, nhưng việc kiểm tra phòng kín và điều áp chưa được triển khai.
+Sealed room dùng bounded BFS tối đa `16384` ô. Air Creator tiêu thụ gas trong buffer để thay các ô air chưa fill bằng marker `breathable_air`. Door luôn được xem là kín để gameplay dễ hơn; trapdoor mở vẫn tạo đường rò. Khi phòng thông ra ngoài qua trapdoor hoặc lỗ thủng, lượng khí đã fill sẽ bị vent. Base khởi đầu được fill sau khi structure được đặt thành công.
+
+Spacesuit gồm helmet, chestplate, leggings và boots. Đủ bộ mới kín khí; chestplate lưu tối đa `600` đơn vị oxygen và mỗi O2 canister nạp `300` đơn vị. Mỗi đơn vị suit O2 phục hồi `50%` vanilla air khi air giảm còn một nửa. Cầm O2 canister tương tác Oxygen Generator sẽ chuyển tối đa `300` O2 từ gas buffer máy sang chestplate và trừ đúng buffer máy; dùng canister trực tiếp vẫn là refill di động và tiêu thụ item.
+
+Mỗi mảnh suit cung cấp `25%` radiation protection: đủ 4/4 miễn nhiễm và xóa radiation effect, 3/4 giảm `75%`. Full suit cách nhiệt tối đa `85%`. Space leggings tăng lực nhảy `10%` và giảm hệ số sát thương rơi `20%` trên mọi dimension. Ngưỡng lạnh/damage là dưới `30°C`; quá trình tăng thân nhiệt có tốc độ tối đa cao hơn quá trình mất nhiệt.
+
+Chest tiếp tế trong base được migration cho cả world mới và cũ, gồm dirt, oak log/planks, crafting table, stick, full leather armor, bread, 2 basic solar arrays, cable, pipe, vent, wheat seeds, water bucket và torch. Solar arrays và machine có hardness `1.5` và nằm trong tag `mineable/pickaxe`, nên mọi cấp pickaxe đều lấy được.
 
 ## Giới hạn hiện tại
 
 - Air Vent mới là nguồn input theo topology; chưa đọc thành phần atmosphere thực tế tại `samplePos`.
 - Pipe chưa có tank, lưu lượng, pressure hoặc gas amount riêng.
-- Air Creator tạo `BREATHABLE_AIR` vào buffer nhưng chưa bơm vào sealed room.
-- Chưa có bounded BFS kiểm tra phòng kín.
-- Chưa có room pressure, leak simulation hoặc atmosphere persistence theo từng phòng.
-- Nước hiện bay hơi ở toàn bộ Mars dimension, kể cả bên trong công trình chưa có room-pressure record.
-- Chưa miễn oxygen damage và radiation effect cho người chơi ở trong base.
+- Atmosphere hiện là marker theo từng block, chưa mô phỏng pressure gradient hoặc tốc độ leak theo thời gian.
+- Phòng lớn hơn `16384` ô bị xem là không kín để bảo vệ hiệu năng.
+- Door được cố ý xem là kín ở mọi trạng thái; trapdoor mở là portal rò khí. Chưa có airlock controller chuyên dụng.
 - GUI machine vẫn là giao diện debug cơ bản.
 - Project chưa có automated test source; Gradle hiện báo `test NO-SOURCE`.
 
@@ -391,5 +395,31 @@ git status --short
 .\gradlew.bat compileJava
 .\gradlew.bat build
 ```
+
+### Temperature and habitat shielding
+
+Ambient temperature now follows biome temperature and loses `0.06 C` per block above Y=64 on Mars, Overworld and The End. Snowy/cryotic biomes cool the player faster. An outdoor Mars dry-ice/CO2 storm removes another `5 C` per intensity level and increases cold exposure. A sealed room filled with `breathable_air` provides complete radiation protection and immediately removes an existing radiation effect.
+
+### Mars agriculture gate
+
+Mars agriculture now requires a sealed breathable room, a room temperature from `10-35 C`, light level 9 and a nearby Fluid Pipe connected to stored water. Planting consumes `5 mB`; each growth attempt consumes `1 mB`. Crops break and drop if these requirements are not met. Other dimensions retain vanilla agriculture behavior.
+
+### Water, fuel and climate production
+
+`mars_water_ice` is a distinct H2O deposit in `cryotic_wastes` at Y -48..24; existing dry ice and CO2 ice-rich regolith remain CO2 resources. Water Extractor processes a Raw Water Ice Chunk into `225 mB` water or a Silk Touch Mars Water Ice block into `900 mB`, slows below `5 C`, and loses 10% recovery above `40 C` without controlled climate.
+
+The production chain is:
+
+```text
+Mars Water Ice -> Water Extractor -> Water
+Water -> Electrolyzer -> Hydrogen + Oxygen
+Outside Mars atmosphere -> Air Vent -> CO2 Extractor -> Carbon Dioxide
+4,000 H2 + 1,000 CO2 -> Fuel Creator -> 1,000 Methane + 850 Water
+Methane + Oxygen -> Heater/Generator -> room heat or 12 kW + recoverable CO2/Water
+```
+
+Gas, fluid and heat pipes are separate network types. A 64,000-unit Gas Tank locks to one gas type; the Fluid Tank stores 64 buckets and supports vanilla bucket transfer. CO2 collection requires a durable Atmospheric Filter, falls to 40% during dust storms with triple filter wear, changes slightly with altitude, and shares a 200 mB/s intake budget among each group of four nearby collectors.
+
+Fuel Creator requires a 128-cycle Nickel Catalyst and exposes EMPTY/FULL animation states. Methane Heater and Methane Generator expose OFF/ON animation states. Heater heat is applied to the average temperature of a breathable room directly or through Heat Pipe connected to an Air Vent; no per-block temperature simulation is used. Methane Generator only burns fuel while a connected UPS input has free storage, preventing idle fuel waste.
 
 Ngoài build, hãy test trực tiếp trong game các hướng placement, port connection, save/reload, trạng thái thiếu input, thiếu điện và output đầy.

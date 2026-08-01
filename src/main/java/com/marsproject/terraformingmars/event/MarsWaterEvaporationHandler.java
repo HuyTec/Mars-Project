@@ -2,6 +2,7 @@ package com.marsproject.terraformingmars.event;
 
 import com.marsproject.terraformingmars.TerraformingMarsMod;
 import com.marsproject.terraformingmars.screen.TeleportHelper;
+import com.marsproject.terraformingmars.atmosphere.RoomAtmosphereManager;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.particles.ParticleTypes;
 import net.minecraft.network.chat.Component;
@@ -89,7 +90,9 @@ public final class MarsWaterEvaporationHandler {
      * once pressurized habitat volumes are available.
      */
     private static boolean isLowPressureExposure(Level level, BlockPos pos) {
-        return level.dimension().equals(TeleportHelper.MARS_LEVEL_KEY);
+        return level.dimension().equals(TeleportHelper.MARS_LEVEL_KEY)
+                && (!(level instanceof ServerLevel serverLevel)
+                || !RoomAtmosphereManager.hasBreathableAir(serverLevel, pos));
     }
 
     private static void vaporize(ServerLevel level, BlockPos pos) {

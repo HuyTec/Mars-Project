@@ -22,6 +22,7 @@ public final class SurvivalHudVanillaLayerHandler {
         }
 
         if (event.getName().equals(VanillaGuiLayers.PLAYER_HEALTH)
+                || event.getName().equals(VanillaGuiLayers.ARMOR_LEVEL)
                 || event.getName().equals(VanillaGuiLayers.FOOD_LEVEL)
                 || event.getName().equals(VanillaGuiLayers.AIR_LEVEL)) {
             event.setCanceled(true);

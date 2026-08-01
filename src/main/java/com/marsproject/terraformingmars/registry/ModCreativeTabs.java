@@ -21,9 +21,14 @@ public final class ModCreativeTabs {
                     .displayItems((parameters, output) -> {
                         // Tự động thêm TẤT CẢ block đã đăng ký trong ModBlocks
                         ModBlocks.BLOCKS.getEntries().stream()
-                                .filter(entry -> entry != ModBlocks.MULTIBLOCK_PART)
+                                .filter(entry -> entry != ModBlocks.MULTIBLOCK_PART
+                                        && entry != ModBlocks.BREATHABLE_AIR)
                                 .forEach(entry -> output.accept(entry.get()));
                         ModItems.RAW_MATERIAL_ITEMS.forEach(entry -> output.accept(entry.get()));
+                        output.accept(ModItems.NICKEL_CATALYST.get());
+                        output.accept(ModItems.AIR_FILTER.get());
+                        output.accept(ModItems.O2_CANISTER.get());
+                        ModItems.EQUIPMENT_ITEMS.forEach(entry -> output.accept(entry.get()));
                     })
                     .build());
 

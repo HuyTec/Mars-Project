@@ -30,6 +30,7 @@ public final class PipeNetworkScanner {
         Set<BlockPos> pipes = new HashSet<>();
         Set<BlockPos> machines = new HashSet<>();
         open.add(startPipe.immutable());
+        PipeType pipeType = ((PipeBlock) level.getBlockState(startPipe).getBlock()).getPipeType();
 
         boolean truncated = false;
         while (!open.isEmpty()) {
@@ -54,8 +55,9 @@ public final class PipeNetworkScanner {
                 }
 
                 BlockState neighborState = level.getBlockState(neighborPos);
-                if (neighborState.getBlock() instanceof PipeBlock) {
-                    if (PipeBlock.isConnected(neighborState, direction.getOpposite())
+                if (neighborState.getBlock() instanceof PipeBlock neighborPipe) {
+                    if (neighborPipe.getPipeType() == pipeType
+                            && PipeBlock.isConnected(neighborState, direction.getOpposite())
                             && !pipes.contains(neighborPos)) {
                         open.add(neighborPos.immutable());
                     }

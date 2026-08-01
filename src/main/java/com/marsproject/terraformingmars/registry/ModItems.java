@@ -2,6 +2,9 @@ package com.marsproject.terraformingmars.registry;
 
 import com.marsproject.terraformingmars.TerraformingMarsMod;
 import com.marsproject.terraformingmars.item.HabitatKitItem;
+import com.marsproject.terraformingmars.item.OxygenCanisterItem;
+import com.marsproject.terraformingmars.item.SpaceSuitItem;
+import net.minecraft.world.item.ArmorItem;
 import net.minecraft.world.item.BlockItem;
 import net.minecraft.world.item.Item;
 import net.neoforged.neoforge.registries.DeferredBlock;
@@ -16,6 +19,7 @@ public final class ModItems {
     public static final DeferredRegister.Items ITEMS = DeferredRegister.createItems(TerraformingMarsMod.MODID);
     public static final List<DeferredItem<BlockItem>> GEOLOGY_ITEMS = new ArrayList<>();
     public static final List<DeferredItem<Item>> RAW_MATERIAL_ITEMS = new ArrayList<>();
+    public static final List<DeferredItem<? extends Item>> EQUIPMENT_ITEMS = new ArrayList<>();
 
     private static DeferredItem<BlockItem> blockItem(String name, DeferredBlock<?> block) {
         DeferredItem<BlockItem> item = ITEMS.registerSimpleBlockItem(name, block);
@@ -41,6 +45,8 @@ public final class ModItems {
     public static final DeferredItem<BlockItem> ROCKY_REGOLITH_ITEM = blockItem("rocky_regolith", ModBlocks.ROCKY_REGOLITH);
     public static final DeferredItem<BlockItem> IRON_RICH_REGOLITH_ITEM = blockItem("iron_rich_regolith", ModBlocks.IRON_RICH_REGOLITH);
     public static final DeferredItem<BlockItem> ICE_RICH_REGOLITH_ITEM = blockItem("ice_rich_regolith", ModBlocks.ICE_RICH_REGOLITH);
+    public static final DeferredItem<BlockItem> MARS_WATER_ICE_ITEM = blockItem(
+            "mars_water_ice", ModBlocks.MARS_WATER_ICE);
 
     public static final DeferredItem<BlockItem> BASALTIC_ROCK_ITEM = blockItem("basaltic_rock", ModBlocks.BASALTIC_ROCK);
     public static final DeferredItem<BlockItem> WEATHERED_BASALT_ITEM = blockItem("weathered_basalt", ModBlocks.WEATHERED_BASALT);
@@ -100,8 +106,23 @@ public final class ModItems {
     public static final DeferredItem<Item> SULFATE_POWDER = rawMaterial("sulfate_powder");
     public static final DeferredItem<Item> MARS_DUST = rawMaterial("mars_dust");
     public static final DeferredItem<Item> DRY_ICE_CHUNK = rawMaterial("dry_ice_chunk");
+    public static final DeferredItem<Item> RAW_WATER_ICE_CHUNK = rawMaterial("raw_water_ice_chunk");
+    public static final DeferredItem<Item> MINERAL_RESIDUE = rawMaterial("mineral_residue");
+    public static final DeferredItem<Item> NICKEL_CATALYST = ITEMS.register(
+            "nickel_catalyst", () -> new Item(new Item.Properties().durability(128)));
+    public static final DeferredItem<Item> AIR_FILTER = ITEMS.register(
+            "air_filter", () -> new Item(new Item.Properties().durability(128)));
     public static final DeferredItem<Item> CO2_CANISTER = rawMaterial("co2_canister");
-    public static final DeferredItem<Item> O2_CANISTER = rawMaterial("o2_canister");
+    public static final DeferredItem<OxygenCanisterItem> O2_CANISTER = ITEMS.register(
+            "o2_canister", () -> new OxygenCanisterItem(new Item.Properties().stacksTo(16)));
+    public static final DeferredItem<SpaceSuitItem> SPACE_HELMET = spaceSuit(
+            "space_helmet", ArmorItem.Type.HELMET);
+    public static final DeferredItem<SpaceSuitItem> SPACE_CHESTPLATE = spaceSuit(
+            "space_chestplate", ArmorItem.Type.CHESTPLATE);
+    public static final DeferredItem<SpaceSuitItem> SPACE_LEGGINGS = spaceSuit(
+            "space_leggings", ArmorItem.Type.LEGGINGS);
+    public static final DeferredItem<SpaceSuitItem> SPACE_BOOTS = spaceSuit(
+            "space_boots", ArmorItem.Type.BOOTS);
     public static final DeferredItem<BlockItem> SOLAR_ARRAY_ITEM = blockItem("solar_array", ModBlocks.SOLAR_ARRAY);
     public static final DeferredItem<BlockItem> ADVANCED_SOLAR_ARRAY_ITEM =
             blockItem("advanced_solar_array", ModBlocks.ADVANCED_SOLAR_ARRAY);
@@ -109,12 +130,28 @@ public final class ModItems {
             
     public static final DeferredItem<BlockItem> POWER_CABLE_ITEM = blockItem("power_cable", ModBlocks.POWER_CABLE);
     public static final DeferredItem<BlockItem> AIR_PIPE_ITEM = blockItem("air_pipe", ModBlocks.AIR_PIPE);
+    public static final DeferredItem<BlockItem> FLUID_PIPE_ITEM = blockItem("fluid_pipe", ModBlocks.FLUID_PIPE);
+    public static final DeferredItem<BlockItem> HEAT_PIPE_ITEM = blockItem("heat_pipe", ModBlocks.HEAT_PIPE);
+    public static final DeferredItem<BlockItem> FLUID_TANK_ITEM = blockItem("fluid_tank", ModBlocks.FLUID_TANK);
+    public static final DeferredItem<BlockItem> GAS_TANK_ITEM = blockItem("gas_tank", ModBlocks.GAS_TANK);
     public static final DeferredItem<BlockItem> OXYGEN_GENERATOR_ITEM =
             blockItem("oxygen_generator", ModBlocks.OXYGEN_GENERATOR);
     public static final DeferredItem<BlockItem> NITROGEN_GENERATOR_ITEM =
             blockItem("nitrogen_generator", ModBlocks.NITROGEN_GENERATOR);
     public static final DeferredItem<BlockItem> AIR_CREATOR_ITEM =
             blockItem("air_creator", ModBlocks.AIR_CREATOR);
+    public static final DeferredItem<BlockItem> WATER_EXTRACTOR_ITEM =
+            blockItem("water_extractor", ModBlocks.WATER_EXTRACTOR);
+    public static final DeferredItem<BlockItem> ELECTROLYZER_ITEM =
+            blockItem("electrolyzer", ModBlocks.ELECTROLYZER);
+    public static final DeferredItem<BlockItem> CO2_EXTRACTOR_ITEM =
+            blockItem("co2_extractor", ModBlocks.CO2_EXTRACTOR);
+    public static final DeferredItem<BlockItem> FUEL_CREATOR_ITEM =
+            blockItem("fuel_creator", ModBlocks.FUEL_CREATOR);
+    public static final DeferredItem<BlockItem> METHANE_HEATER_ITEM =
+            blockItem("methane_heater", ModBlocks.METHANE_HEATER);
+    public static final DeferredItem<BlockItem> METHANE_GENERATOR_ITEM =
+            blockItem("methane_generator", ModBlocks.METHANE_GENERATOR);
     public static final DeferredItem<BlockItem> AIR_VENT_ITEM =
             blockItem("air_vent", ModBlocks.AIR_VENT);
     public static final DeferredItem<BlockItem> LIFE_SUPPORT_UNIT_ITEM = blockItem("life_support_unit", ModBlocks.LIFE_SUPPORT_UNIT);
@@ -122,6 +159,14 @@ public final class ModItems {
     public static final DeferredItem<Item> HABITAT_KIT = ITEMS.register("habitat_kit",
             () -> new HabitatKitItem(new Item.Properties().stacksTo(1)));
     public static final DeferredItem<BlockItem> UPS_ITEM = blockItem("ups", ModBlocks.UPS);
+
+    private static DeferredItem<SpaceSuitItem> spaceSuit(String name, ArmorItem.Type type) {
+        DeferredItem<SpaceSuitItem> item = ITEMS.register(name, () -> new SpaceSuitItem(
+                ModArmorMaterials.SPACE_SUIT, type,
+                new Item.Properties().durability(type.getDurability(24))));
+        EQUIPMENT_ITEMS.add(item);
+        return item;
+    }
 
     public static void register() { }
 }

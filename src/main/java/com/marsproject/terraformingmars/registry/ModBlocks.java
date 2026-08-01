@@ -13,8 +13,11 @@ import com.marsproject.terraformingmars.block.MultiblockPartBlock;
 import com.marsproject.terraformingmars.block.PipeBlock;
 import com.marsproject.terraformingmars.block.MachineBlock;
 import com.marsproject.terraformingmars.block.AirVentBlock;
+import com.marsproject.terraformingmars.block.BreathableAirBlock;
 import com.marsproject.terraformingmars.machine.MachineOperation;
 import com.marsproject.terraformingmars.machine.MachineType;
+import com.marsproject.terraformingmars.pipe.PipeType;
+import com.marsproject.terraformingmars.block.ResourceTankBlock;
 import net.minecraft.world.level.block.Block;
 import net.minecraft.world.level.block.SnowLayerBlock;
 import net.minecraft.world.level.block.SoundType;
@@ -67,7 +70,7 @@ public final class ModBlocks {
                 DeferredBlock<SolarArrayBlock> block = BLOCKS.register(name, () -> new SolarArrayBlock(
                         BlockBehaviour.Properties.of()
                                 .mapColor(MapColor.COLOR_BLUE)
-                                .strength(2.0F)
+                                .strength(1.5F)
                                 .sound(SoundType.METAL)
                                 .requiresCorrectToolForDrops(),
                         type
@@ -80,7 +83,7 @@ public final class ModBlocks {
                 DeferredBlock<MachineBlock> block = BLOCKS.register(name, () -> new MachineBlock(
                         BlockBehaviour.Properties.of()
                                 .mapColor(MapColor.COLOR_LIGHT_BLUE)
-                                .strength(2.5F)
+                                .strength(1.5F)
                                 .sound(SoundType.METAL)
                                 .requiresCorrectToolForDrops()
                                 .noOcclusion(),
@@ -88,6 +91,25 @@ public final class ModBlocks {
                 ));
                 MACHINES.add(block);
                 return block;
+        }
+
+        private static MachineType machineType(String name, int energy, int interval,
+                                               MachineOperation operation,
+                                               String idleAnimation, String workingAnimation) {
+                boolean customAnimation = operation == MachineOperation.SABATIER_REACTION
+                        || operation == MachineOperation.METHANE_HEATING
+                        || operation == MachineOperation.METHANE_POWER;
+                return new MachineType(
+                        new ResourceLocation(TerraformingMarsMod.MODID, name),
+                        1, 1, energy, interval, operation,
+                        new ResourceLocation(TerraformingMarsMod.MODID, "geo/machine.geo.json"),
+                        new ResourceLocation(TerraformingMarsMod.MODID, "textures/block/" + name + ".png"),
+                        new ResourceLocation(TerraformingMarsMod.MODID,
+                                customAnimation
+                                        ? "animations/" + name + ".animation.json"
+                                        : "animations/machine.animation.json"),
+                        List.of(), idleAnimation, workingAnimation, "no_power"
+                );
         }
 
         // --- Bụi / regolith bề mặt ---
@@ -110,6 +132,8 @@ public final class ModBlocks {
         public static final DeferredBlock<Block> ROCKY_REGOLITH = falling("rocky_regolith", MapColor.COLOR_BROWN, SoundType.GRAVEL);
         public static final DeferredBlock<Block> IRON_RICH_REGOLITH = falling("iron_rich_regolith", MapColor.COLOR_RED, SoundType.GRAVEL);
         public static final DeferredBlock<Block> ICE_RICH_REGOLITH = solid("ice_rich_regolith", MapColor.ICE, 1.2F, SoundType.POWDER_SNOW);
+        public static final DeferredBlock<Block> MARS_WATER_ICE = solid(
+                "mars_water_ice", MapColor.ICE, 1.8F, SoundType.GLASS);
 
         // --- Basalt (núi lửa) ---
         public static final DeferredBlock<Block> BASALTIC_ROCK = solid("basaltic_rock", MapColor.COLOR_GRAY, 2.0F, SoundType.BASALT);
@@ -225,8 +249,8 @@ public final class ModBlocks {
                         new ResourceLocation(TerraformingMarsMod.MODID, "oxygen_generator"),
                         1,
                         1,
-                        300,
-                        120,
+                        30_000,
+                        400,
                         MachineOperation.OXYGEN_GENERATION,
                         new ResourceLocation(TerraformingMarsMod.MODID, "geo/machine.geo.json"),
                         new ResourceLocation(TerraformingMarsMod.MODID, "textures/block/oxygen_generator.png"),
@@ -244,8 +268,8 @@ public final class ModBlocks {
                         new ResourceLocation(TerraformingMarsMod.MODID, "nitrogen_generator"),
                         1,
                         1,
-                        150,
-                        120,
+                        15_000,
+                        400,
                         MachineOperation.NITROGEN_GENERATION,
                         new ResourceLocation(TerraformingMarsMod.MODID, "geo/machine.geo.json"),
                         new ResourceLocation(TerraformingMarsMod.MODID, "textures/block/nitrogen_generator.png"),
@@ -263,7 +287,7 @@ public final class ModBlocks {
                         new ResourceLocation(TerraformingMarsMod.MODID, "air_creator"),
                         1,
                         1,
-                        450,
+                        45_000,
                         120,
                         MachineOperation.AIR_CREATION,
                         new ResourceLocation(TerraformingMarsMod.MODID, "geo/machine.geo.json"),
@@ -284,6 +308,32 @@ public final class ModBlocks {
                         .sound(SoundType.METAL)
                         .requiresCorrectToolForDrops())
         );
+        public static final DeferredBlock<BreathableAirBlock> BREATHABLE_AIR = BLOCKS.register(
+                "breathable_air",
+                () -> new BreathableAirBlock(BlockBehaviour.Properties.of()
+                        .replaceable()
+                        .noCollission()
+                        .air())
+        );
+
+        public static final DeferredBlock<MachineBlock> WATER_EXTRACTOR = machine(
+                "water_extractor", machineType("water_extractor", 24_000, 200,
+                        MachineOperation.WATER_EXTRACTION, "idle", "working"));
+        public static final DeferredBlock<MachineBlock> ELECTROLYZER = machine(
+                "electrolyzer", machineType("electrolyzer", 240_000, 600,
+                        MachineOperation.ELECTROLYSIS, "idle", "working"));
+        public static final DeferredBlock<MachineBlock> CO2_EXTRACTOR = machine(
+                "co2_extractor", machineType("co2_extractor", 32_000, 400,
+                        MachineOperation.CO2_COLLECTION, "idle", "working"));
+        public static final DeferredBlock<MachineBlock> FUEL_CREATOR = machine(
+                "fuel_creator", machineType("fuel_creator", 400_000, 800,
+                        MachineOperation.SABATIER_REACTION, "empty", "full"));
+        public static final DeferredBlock<MachineBlock> METHANE_HEATER = machine(
+                "methane_heater", machineType("methane_heater", 200, 20,
+                        MachineOperation.METHANE_HEATING, "off", "on"));
+        public static final DeferredBlock<MachineBlock> METHANE_GENERATOR = machine(
+                "methane_generator", machineType("methane_generator", 0, 20,
+                        MachineOperation.METHANE_POWER, "off", "on"));
 
         public static final DeferredBlock<Block> POWER_CABLE = BLOCKS.register("power_cable",
                 () -> new CableBlock(BlockBehaviour.Properties.of()
@@ -316,5 +366,21 @@ public final class ModBlocks {
                                 .strength(0.8F)
                                 .sound(SoundType.COPPER)
                                 .noOcclusion()));
+        public static final DeferredBlock<Block> FLUID_PIPE = BLOCKS.register("fluid_pipe",
+                () -> new PipeBlock(BlockBehaviour.Properties.of()
+                        .mapColor(MapColor.COLOR_BLUE).strength(0.8F)
+                        .sound(SoundType.COPPER).noOcclusion(), PipeType.FLUID));
+        public static final DeferredBlock<Block> HEAT_PIPE = BLOCKS.register("heat_pipe",
+                () -> new PipeBlock(BlockBehaviour.Properties.of()
+                        .mapColor(MapColor.COLOR_ORANGE).strength(0.8F)
+                        .sound(SoundType.COPPER).noOcclusion(), PipeType.HEAT));
+        public static final DeferredBlock<ResourceTankBlock> FLUID_TANK = BLOCKS.register(
+                "fluid_tank", () -> new ResourceTankBlock(BlockBehaviour.Properties.of()
+                        .mapColor(MapColor.COLOR_BLUE).strength(2.0F)
+                        .sound(SoundType.METAL).requiresCorrectToolForDrops(), PipeType.FLUID));
+        public static final DeferredBlock<ResourceTankBlock> GAS_TANK = BLOCKS.register(
+                "gas_tank", () -> new ResourceTankBlock(BlockBehaviour.Properties.of()
+                        .mapColor(MapColor.COLOR_LIGHT_BLUE).strength(2.0F)
+                        .sound(SoundType.METAL).requiresCorrectToolForDrops(), PipeType.GAS));
         public static void register() { }
 }

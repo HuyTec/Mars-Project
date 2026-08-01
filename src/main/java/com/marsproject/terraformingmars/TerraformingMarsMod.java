@@ -13,6 +13,7 @@ import com.marsproject.terraformingmars.network.MarsEnvironmentSyncPayload;
 import com.marsproject.terraformingmars.network.MarsWeatherSyncPayload;
 import com.marsproject.terraformingmars.network.OpenIntroPayload;
 import com.marsproject.terraformingmars.registry.ModBlocks;
+import com.marsproject.terraformingmars.registry.ModArmorMaterials;
 import com.marsproject.terraformingmars.registry.ModBlockEntities;
 import com.marsproject.terraformingmars.registry.ModCreativeTabs;
 import com.marsproject.terraformingmars.registry.ModEffects;
@@ -87,6 +88,7 @@ public class TerraformingMarsMod {
         ModItems.register();
 
         ModBlocks.BLOCKS.register(modEventBus);
+        ModArmorMaterials.ARMOR_MATERIALS.register(modEventBus);
         ModBlockEntities.BLOCK_ENTITY_TYPES.register(modEventBus);
         ModMenuTypes.MENU_TYPES.register(modEventBus);
         ModRecipeTypes.SERIALIZERS.register(modEventBus);

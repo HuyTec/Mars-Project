@@ -20,7 +20,7 @@ public final class MachineMenu extends AbstractContainerMenu {
         this(containerId, inventory,
                 (MachineBlockEntity) inventory.player.level()
                         .getBlockEntity(buffer.readBlockPos()),
-                new SimpleContainerData(3));
+                new SimpleContainerData(4));
     }
 
     public MachineMenu(int containerId, Inventory inventory,
@@ -114,7 +114,12 @@ public final class MachineMenu extends AbstractContainerMenu {
 
     public int getScaledProgress(int width) {
         int total = getProcessingTime();
-        return total <= 0 ? 0 : Math.min(width, getProgress() * width / total);
+        if (total > 0) {
+            return Math.min(width, getProgress() * width / total);
+        }
+        int operationInterval = machine.getMachineType().operationIntervalTicks();
+        return operationInterval <= 0 ? 0
+                : Math.min(width, data.get(3) * width / operationInterval);
     }
 
     public int getStatus() {

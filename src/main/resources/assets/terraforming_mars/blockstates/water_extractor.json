@@ -1,0 +1,1 @@
+{"variants":{"facing=north":{"model":"terraforming_mars:block/water_extractor"},"facing=east":{"model":"terraforming_mars:block/water_extractor","y":90},"facing=south":{"model":"terraforming_mars:block/water_extractor","y":180},"facing=west":{"model":"terraforming_mars:block/water_extractor","y":270}}}
